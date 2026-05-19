@@ -2,228 +2,1123 @@
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <title>Enhedsliste med PDF-eksport</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhed Scanning App</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #F7F7F7; margin: 20px; }
-        h2 { color: #D20014; }
-        .category-btn { background: #208684; color: #fff; border: none; padding: 6px 14px; margin: 4px; cursor: pointer; border-radius: 4px;}
-        .locked { color: #9F000F; font-weight: bold;}
-        .input-section { margin-bottom: 18px; background: #EDEDED; padding: 10px; border-radius: 8px; }
-        .list-section { margin-top: 20px; }
-        .item-row { background: #fff; margin: 4px 0; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
-        .item-actions button { margin-left: 6px; }
-        .checkbox { margin-right: 10px;}
-        .btn { background: #D20014; color: #fff; border: none; padding: 8px 18px; margin: 8px 4px; cursor: pointer; border-radius: 4px;}
-        .btn-secondary { background: #208684;}
-        .btn-lock { background: #9F000F;}
-        .btn:disabled { opacity: 0.7; cursor: not-allowed;}
-        label { font-weight: bold;}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 15px;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #D20014 0%, #9F000F 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .list-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #208684;
+        }
+
+        .list-selector h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #208684;
+        }
+
+        .list-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .list-btn {
+            padding: 12px;
+            background: white;
+            border: 2px solid #208684;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: left;
+            transition: all 0.3s;
+            color: #208684;
+            font-weight: 600;
+        }
+
+        .list-btn:hover {
+            background: #208684;
+            color: white;
+        }
+
+        .list-btn.active {
+            background: #208684;
+            color: white;
+        }
+
+        .list-btn small {
+            display: block;
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.8;
+            font-weight: normal;
+        }
+
+        .btn-new-list {
+            width: 100%;
+            padding: 12px;
+            background: #D20014;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn-new-list:hover {
+            background: #9F000F;
+        }
+
+        .list-title-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .list-title-section h2 {
+            color: #333;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .list-title-section p {
+            font-size: 12px;
+            color: #656565;
+        }
+
+        .edit-title-btn {
+            padding: 6px 12px;
+            background: #208684;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .edit-title-btn:hover {
+            background: #156b63;
+        }
+
+        .locked-badge {
+            display: inline-block;
+            background: #D20014;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .scanning-section {
+            background: #f0f8f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #208684;
+        }
+
+        .scanning-section h3 {
+            color: #208684;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #208684;
+            box-shadow: 0 0 4px rgba(32, 134, 132, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .btn-scan {
+            background: #208684;
+            color: white;
+        }
+
+        .btn-scan:hover:not(:disabled) {
+            background: #156b63;
+        }
+
+        .btn-scan:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-manual {
+            background: #656565;
+            color: white;
+        }
+
+        .btn-manual:hover:not(:disabled) {
+            background: #4a4a4a;
+        }
+
+        .btn-manual:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .items-section {
+            margin-bottom: 20px;
+        }
+
+        .items-section h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .category-group {
+            margin-bottom: 15px;
+        }
+
+        .category-title {
+            background: #208684;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .item:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .item-content {
+            flex: 1;
+        }
+
+        .item-code {
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .item-category {
+            font-size: 11px;
+            color: #656565;
+            margin-top: 4px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 10px;
+        }
+
+        .btn-edit-item {
+            background: #208684;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background 0.3s;
+        }
+
+        .btn-edit-item:hover {
+            background: #156b63;
+        }
+
+        .btn-delete-item {
+            background: #D20014;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background 0.3s;
+        }
+
+        .btn-delete-item:hover {
+            background: #9F000F;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .btn-save {
+            flex: 1;
+            padding: 12px;
+            background: #208684;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn-save:hover:not(:disabled) {
+            background: #156b63;
+        }
+
+        .btn-save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-lock {
+            flex: 1;
+            padding: 12px;
+            background: #D20014;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn-lock:hover:not(:disabled) {
+            background: #9F000F;
+        }
+
+        .btn-lock:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-pdf {
+            flex: 1;
+            padding: 12px;
+            background: #656565;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn-pdf:hover:not(:disabled) {
+            background: #4a4a4a;
+        }
+
+        .btn-pdf:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        .no-lists-message {
+            text-align: center;
+            color: #999;
+            padding: 30px 20px;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            max-width: 90%;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .modal p {
+            color: #656565;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .modal-btn-cancel {
+            background: #ddd;
+            color: #333;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #ccc;
+        }
+
+        .modal-btn-confirm {
+            background: #D20014;
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: #9F000F;
+        }
+
+        .edit-modal h3 {
+            margin-bottom: 15px;
+        }
+
+        .edit-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .edit-modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .edit-btn-cancel {
+            background: #ddd;
+            color: #333;
+        }
+
+        .edit-btn-save {
+            background: #208684;
+            color: white;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .header,
+            .list-selector,
+            .scanning-section,
+            .action-buttons {
+                display: none;
+            }
+
+            .list-title-section {
+                page-break-after: avoid;
+            }
+
+            .category-group {
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
-    <h2>Enhedsliste</h2>
-    <div class="input-section" id="inputSection">
-        <label>Kategori:</label>
-        <button class="category-btn" onclick="setCategory('Tablet')">Tablet</button>
-        <button class="category-btn" onclick="setCategory('Telefon')">Telefon</button>
-        <button class="category-btn" onclick="setCategory('PC')">PC</button>
-        <span id="selectedCategory"></span>
-        <br><br>
-        <label>Scan kode (kun mock):</label>
-        <input type="text" id="scanInput" placeholder="Simuler scan/kode">
-        <button class="btn-secondary" onclick="simulateScan()">Tilføj (som scan)</button>
-        <br><br>
-        <label>Manuel indtastning:</label><br>
-        <input type="text" id="manualCode" placeholder="Indtast kode manuelt">
-        <input type="text" id="manualNote" placeholder="Evt. note">
-        <button class="btn-secondary" onclick="addManual()">Tilføj manuelt</button>
-    </div>
-    <div class="list-section" id="listSection"></div>
-    <button class="btn" onclick="saveList()">Gem listen</button>
-    <button class="btn" onclick="generatePDF()">Eksporter som PDF (rigtig)</button>
-    <button class="btn-lock" onclick="lockList()" id="lockBtn">Lås listen</button>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Enhed Scanning</h1>
+            <p>Rockwool Enhed Inventar</p>
+        </div>
 
-    <div id="confirmationDialog" style="display:none; position:fixed; top:20%; left:35%; background:white; border: 2px solid #208684; padding:30px; border-radius:10px;">
-        <p>Er du sikker på, at du vil låse denne liste? Listen kan ikke redigeres herefter.</p>
-        <button class="btn" onclick="confirmLock(true)">Ja, lås</button>
-        <button class="btn-secondary" onclick="confirmLock(false)">Nej</button>
+        <!-- Liste Vælger -->
+        <div class="list-selector" id="listSelector">
+            <button class="btn-new-list" onclick="createNewList()">➕ Ny Liste</button>
+            <h2>Tidligere Lister</h2>
+            <div class="list-buttons" id="listButtons">
+                <p class="no-lists-message">Ingen lister endnu. Opret en ny liste for at komme i gang!</p>
+            </div>
+        </div>
+
+        <!-- Hovedindhold -->
+        <div id="mainContent" style="display: none;">
+            <!-- Listetitel -->
+            <div class="list-title-section">
+                <h2 id="listTitle">Min Liste</h2>
+                <p id="listCreatedDate">Oprettet: </p>
+                <p id="listLockedDate" style="display: none;">Låst: </p>
+                <button class="edit-title-btn" onclick="editListTitle()" id="editTitleBtn">Rediger titel</button>
+                <div class="locked-badge" id="lockedBadge" style="display: none;">🔒 LÅST LISTE</div>
+            </div>
+
+            <!-- Scanning Sektion -->
+            <div class="scanning-section" id="scanningSection">
+                <h3>📸 Scan eller Manual Indtastning</h3>
+                
+                <div class="input-group">
+                    <label for="codeInput">Stregkode / QR Kode</label>
+                    <input type="text" id="codeInput" placeholder="Scan kode eller skriv manuelt..." autocomplete="off">
+                </div>
+
+                <div class="input-group">
+                    <label for="deviceType">Vælg Enhedstype</label>
+                    <select id="deviceType">
+                        <option value="">-- Vælg enhedstype --</option>
+                        <option value="Tablet">📱 Tablet</option>
+                        <option value="Telefon">☎️ Telefon</option>
+                        <option value="PC">💻 PC</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-scan" id="scanBtn" onclick="handleScan()">Tilføj Enhed</button>
+                    <button class="btn btn-manual" id="manualBtn" onclick="focusCodeInput()">Tastatur</button>
+                </div>
+            </div>
+
+            <!-- Enhedsliste -->
+            <div class="items-section" id="itemsSection" style="display: none;">
+                <h3>📋 Registrerede Enheder</h3>
+                <div id="itemsList"></div>
+            </div>
+
+            <div id="emptyItems" class="empty-message">
+                Ingen enheder registreret endnu. Begynd med at scanne eller tilføj manuelt.
+            </div>
+
+            <!-- Handlingsknapper -->
+            <div class="action-buttons">
+                <button class="btn-save" id="saveBtn" onclick="saveList()">💾 Gem Liste</button>
+                <button class="btn-pdf" id="pdfBtn" onclick="generatePDF()">📄 PDF</button>
+                <button class="btn-lock" id="lockBtn" onclick="showLockConfirm()">🔒 Lås Liste</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bekræftelsesmodal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h3>Bekræftelse</h3>
+            <p id="confirmMessage"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn-cancel" onclick="closeModal()">Annuller</button>
+                <button class="modal-btn-confirm" id="confirmBtn" onclick="confirmAction()">Ja, fortsæt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rediger Titel Modal -->
+    <div class="modal" id="editTitleModal">
+        <div class="modal-content edit-modal">
+            <h3>Rediger Listetitel</h3>
+            <div class="input-group">
+                <label for="newTitleInput">Ny Titel</label>
+                <input type="text" id="newTitleInput" placeholder="Skriv ny titel...">
+            </div>
+            <div class="edit-modal-buttons">
+                <button class="edit-btn-cancel" onclick="closeEditTitleModal()">Annuller</button>
+                <button class="edit-btn-save" onclick="saveNewTitle()">Gem Titel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rediger Item Modal -->
+    <div class="modal" id="editItemModal">
+        <div class="modal-content edit-modal">
+            <h3>Rediger Enhed</h3>
+            <div class="input-group">
+                <label for="editCodeInput">Stregkode / QR Kode</label>
+                <input type="text" id="editCodeInput" placeholder="Stregkode...">
+            </div>
+            <div class="input-group">
+                <label for="editDeviceTypeInput">Enhedstype</label>
+                <select id="editDeviceTypeInput">
+                    <option value="Tablet">📱 Tablet</option>
+                    <option value="Telefon">☎️ Telefon</option>
+                    <option value="PC">💻 PC</option>
+                </select>
+            </div>
+            <div class="edit-modal-buttons">
+                <button class="edit-btn-cancel" onclick="closeEditItemModal()">Annuller</button>
+                <button class="edit-btn-save" onclick="saveEditedItem()">Gem Ændringer</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        let selectedCategory = '';
-        let deviceList = [];
-        let listLocked = false;
+        // ============= GLOBALE VARIABLER =============
+        let lists = [];
+        let currentListId = null;
+        let pendingAction = null;
 
-        function setCategory(cat) {
-            selectedCategory = cat;
-            document.getElementById('selectedCategory').innerText = 'Valgt: ' + cat;
+        // ============= INITIALISERING =============
+        function init() {
+            loadLists();
+            renderListButtons();
+            setupKeyboardShortcuts();
         }
 
-        function simulateScan() {
-            if (!selectedCategory) {
-                alert('Vælg først kategori');
-                return;
-            }
-            let code = document.getElementById('scanInput').value.trim();
-            if (!code) {
-                alert('Du skal indtaste en kode');
-                return;
-            }
-            addItem(code, selectedCategory, '', false);
-            document.getElementById('scanInput').value = '';
+        // ============= LOKALT LAGER (LocalStorage) =============
+        function loadLists() {
+            const saved = localStorage.getItem('lists');
+            lists = saved ? JSON.parse(saved) : [];
         }
 
-        function addManual() {
-            if (!selectedCategory) {
-                alert('Vælg først kategori');
-                return;
-            }
-            let code = document.getElementById('manualCode').value.trim();
-            let note = document.getElementById('manualNote').value.trim();
-            if (!code) {
-                alert('Indtast en kode manuelt');
-                return;
-            }
-            addItem(code, selectedCategory, note, false);
-            document.getElementById('manualCode').value = '';
-            document.getElementById('manualNote').value = '';
+        function saveLists() {
+            localStorage.setItem('lists', JSON.stringify(lists));
         }
 
-        function addItem(code, cat, note, locked) {
-            deviceList.push({
-                id: Date.now() + Math.random(),
-                code: code,
-                category: cat,
-                note: note,
-                locked: locked
+        // ============= LISTE OPRETTELSE =============
+        function createNewList() {
+            const title = prompt('Hvad skal listen hedde?', 'Min enhedsliste');
+            if (!title) return;
+
+            const newList = {
+                id: Date.now(),
+                title: title,
+                items: [],
+                createdDate: new Date().toLocaleString('da-DK'),
+                lockedDate: null,
+                locked: false
+            };
+
+            lists.unshift(newList);
+            saveLists();
+            selectList(newList.id);
+            renderListButtons();
+        }
+
+        // ============= LISTE VALG =============
+        function selectList(listId) {
+            currentListId = listId;
+            document.getElementById('listSelector').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            renderCurrentList();
+        }
+
+        function goBackToLists() {
+            currentListId = null;
+            document.getElementById('listSelector').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+        }
+
+        // ============= RENDERING =============
+        function renderListButtons() {
+            const buttonsContainer = document.getElementById('listButtons');
+            
+            if (lists.length === 0) {
+                buttonsContainer.innerHTML = '<p class="no-lists-message">Ingen lister endnu. Opret en ny liste for at komme i gang!</p>';
+                return;
+            }
+
+            buttonsContainer.innerHTML = lists.map(list => `
+                <button class="list-btn" onclick="selectList(${list.id})">
+                    ${list.title}
+                    <small>Oprettet: ${list.createdDate}${list.locked ? '<br>🔒 Låst: ' + list.lockedDate : ''}</small>
+                </button>
+            `).join('');
+        }
+
+        function renderCurrentList() {
+            const list = getCurrentList();
+            if (!list) return;
+
+            // Titel
+            document.getElementById('listTitle').textContent = list.title;
+            document.getElementById('listCreatedDate').textContent = `Oprettet: ${list.createdDate}`;
+
+            // Låst status
+            const lockedBadge = document.getElementById('lockedBadge');
+            const lockedDate = document.getElementById('listLockedDate');
+            const scanningSection = document.getElementById('scanningSection');
+            const saveBtn = document.getElementById('saveBtn');
+            const editTitleBtn = document.getElementById('editTitleBtn');
+
+            if (list.locked) {
+                lockedBadge.style.display = 'inline-block';
+                lockedDate.style.display = 'block';
+                lockedDate.textContent = `Låst: ${list.lockedDate}`;
+                scanningSection.style.display = 'none';
+                saveBtn.style.display = 'none';
+                editTitleBtn.style.display = 'none';
+            } else {
+                lockedBadge.style.display = 'none';
+                lockedDate.style.display = 'none';
+                scanningSection.style.display = 'block';
+                saveBtn.style.display = 'block';
+                editTitleBtn.style.display = 'block';
+                document.getElementById('codeInput').focus();
+            }
+
+            renderItems();
+        }
+
+        function renderItems() {
+            const list = getCurrentList();
+            const itemsList = document.getElementById('itemsList');
+            const itemsSection = document.getElementById('itemsSection');
+            const emptyItems = document.getElementById('emptyItems');
+
+            if (!list || list.items.length === 0) {
+                itemsSection.style.display = 'none';
+                emptyItems.style.display = 'block';
+                return;
+            }
+
+            itemsSection.style.display = 'block';
+            emptyItems.style.display = 'none';
+
+            // Gruppér efter enhedstype
+            const grouped = {
+                'Tablet': [],
+                'Telefon': [],
+                'PC': []
+            };
+
+            list.items.forEach((item, idx) => {
+                if (grouped[item.type]) {
+                    grouped[item.type].push({ ...item, index: idx });
+                }
             });
-            renderList();
-        }
 
-        function renderList() {
-            let listHtml = '';
-            if (listLocked) {
-                listHtml += '<div class="locked">LISTEN ER LÅST – ingen redigering mulig</div>';
-            }
-            ['Tablet', 'Telefon', 'PC'].forEach(cat => {
-                let items = deviceList.filter(item => item.category === cat);
+            let html = '';
+            Object.entries(grouped).forEach(([type, items]) => {
                 if (items.length > 0) {
-                    listHtml += `<h3>${cat}</h3>`;
+                    html += `<div class="category-group">
+                        <div class="category-title">${type} (${items.length})</div>`;
+                    
                     items.forEach(item => {
-                        listHtml += `<div class="item-row">
-                            <input class="checkbox" type="checkbox" disabled>
-                            <span>Kode: ${item.code} ${item.note ? ' | Note: '+item.note : ''}</span>
-                            <div class="item-actions">`;
-                        if (!listLocked) {
-                            listHtml += `<button class="btn-secondary" onclick="editItem(${item.id})">Rediger</button>
-                                 <button class="btn-lock" onclick="deleteItem(${item.id})">Slet</button>`;
-                        }
-                        listHtml += `</div></div>`;
+                        html += `<div class="item">
+                            <div class="item-content">
+                                <div class="item-code">${item.code}</div>
+                                <div class="item-category">${item.type}</div>
+                            </div>
+                            <div class="item-actions" ${list.locked ? 'style="display:none"' : ''}>
+                                <button class="btn-edit-item" onclick="editItem(${item.index})">Rediger</button>
+                                <button class="btn-delete-item" onclick="deleteItem(${item.index})">Slet</button>
+                            </div>
+                        </div>`;
                     });
+                    
+                    html += '</div>';
                 }
             });
-            document.getElementById('listSection').innerHTML = listHtml;
+
+            itemsList.innerHTML = html;
         }
 
-        function editItem(id) {
-            let item = deviceList.find(i => i.id === id);
-            let newCode = prompt('Rediger kode:', item.code);
-            if (newCode != null && newCode.trim() !== '') item.code = newCode.trim();
-            let newNote = prompt('Rediger note:', item.note);
-            if (newNote != null) item.note = newNote.trim();
-            renderList();
-        }
+        // ============= SCANNING OG TILFØJELSE =============
+        function handleScan() {
+            const code = document.getElementById('codeInput').value.trim();
+            const type = document.getElementById('deviceType').value;
 
-        function deleteItem(id) {
-            deviceList = deviceList.filter(i => i.id !== id);
-            renderList();
-        }
-
-        function saveList() {
-            alert('Listen gemt (mock) – data beholdes lokalt i browseren.');
-        }
-
-        // -------- PDF GENERERING ------------
-        function generatePDF() {
-            if (deviceList.length === 0) {
-                alert('Listen er tom. Tilføj poster før eksport.');
+            if (!code) {
+                alert('Venligst scan en kode eller skriv en kode manuelt');
                 return;
             }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
 
-            doc.setFontSize(18);
-            doc.setTextColor(210,0,20);
-            doc.text("Enhedsliste", 15, 15);
+            if (!type) {
+                alert('Venligst vælg en enhedstype');
+                return;
+            }
 
-            doc.setFontSize(11);
-            doc.setTextColor(40,40,40);
-            doc.text('Genereret: ' + (new Date()).toLocaleString('da-DK'), 15, 22);
+            const list = getCurrentList();
+            list.items.push({
+                code: code,
+                type: type,
+                addedDate: new Date().toLocaleString('da-DK')
+            });
 
-            let y = 32;
-            ['Tablet', 'Telefon', 'PC'].forEach(cat => {
-                // find items for denne kategori
-                let items = deviceList.filter(item => item.category === cat);
-                if (items.length > 0) {
-                    doc.setFontSize(14);
-                    doc.setTextColor(32,134,132);
-                    doc.text(cat, 15, y);
-                    y += 6;
-                    doc.autoTable({
-                        startY: y,
-                        styles: { fontSize:11 },
-                        head: [['Tjek', 'Kode', 'Note']],
-                        body: items.map(i => [checkboxBox(), i.code, i.note || '']),
-                        theme: 'grid',
-                        headStyles: {fillColor:[210,0,20]},
-                        columnStyles: {
-                            0: {cellWidth: 18, valign: 'middle', halign:'center'},
-                            1: {cellWidth: 60}
-                        },
-                        didDrawCell: function(data) {
-                            // Draw checkbox manually if in "Tjek" column
-                            if(data.column.index === 0 && data.cell.section === 'body') {
-                                let x = data.cell.x + 6;
-                                let y = data.cell.y + 2;
-                                // Tegn firkant
-                                doc.rect(x, y, 6, 6);
-                            }
-                        }
-                    });
-                    y = doc.lastAutoTable.finalY + 8; // få næste y position
+            document.getElementById('codeInput').value = '';
+            document.getElementById('deviceType').value = '';
+            
+            renderItems();
+            document.getElementById('codeInput').focus();
+        }
+
+        function focusCodeInput() {
+            document.getElementById('codeInput').focus();
+        }
+
+        // ============= REDIGERING =============
+        function editItem(index) {
+            const list = getCurrentList();
+            const item = list.items[index];
+
+            document.getElementById('editCodeInput').value = item.code;
+            document.getElementById('editDeviceTypeInput').value = item.type;
+            document.getElementById('editItemModal').dataset.itemIndex = index;
+            document.getElementById('editItemModal').classList.add('active');
+        }
+
+        function saveEditedItem() {
+            const index = parseInt(document.getElementById('editItemModal').dataset.itemIndex);
+            const list = getCurrentList();
+            const code = document.getElementById('editCodeInput').value.trim();
+            const type = document.getElementById('editDeviceTypeInput').value;
+
+            if (!code || !type) {
+                alert('Både kode og enhedstype skal udfyldes');
+                return;
+            }
+
+            list.items[index].code = code;
+            list.items[index].type = type;
+
+            closeEditItemModal();
+            renderItems();
+        }
+
+        function closeEditItemModal() {
+            document.getElementById('editItemModal').classList.remove('active');
+        }
+
+        function deleteItem(index) {
+            if (confirm('Slet denne enhed?')) {
+                const list = getCurrentList();
+                list.items.splice(index, 1);
+                renderItems();
+            }
+        }
+
+        // ============= LISTE TITEL REDIGERING =============
+        function editListTitle() {
+            const list = getCurrentList();
+            document.getElementById('newTitleInput').value = list.title;
+            document.getElementById('editTitleModal').classList.add('active');
+            document.getElementById('newTitleInput').focus();
+        }
+
+        function saveNewTitle() {
+            const list = getCurrentList();
+            const newTitle = document.getElementById('newTitleInput').value.trim();
+
+            if (!newTitle) {
+                alert('Titel kan ikke være tom');
+                return;
+            }
+
+            list.title = newTitle;
+            saveLists();
+            closeEditTitleModal();
+            renderListButtons();
+            renderCurrentList();
+        }
+
+        function closeEditTitleModal() {
+            document.getElementById('editTitleModal').classList.remove('active');
+        }
+
+        // ============= GEM LISTE =============
+        function saveList() {
+            saveLists();
+            alert('Liste gemt! ✅');
+        }
+
+        // ============= LÅS LISTE =============
+        function showLockConfirm() {
+            document.getElementById('confirmMessage').textContent = 'Er du sikker på at du vil låse denne liste? Du kan ikke redigere den efter låsning.';
+            pendingAction = 'lock';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function confirmAction() {
+            if (pendingAction === 'lock') {
+                lockList();
+            }
+            closeModal();
+        }
+
+        function lockList() {
+            const list = getCurrentList();
+            list.locked = true;
+            list.lockedDate = new Date().toLocaleString('da-DK');
+            saveLists();
+            renderCurrentList();
+            renderListButtons();
+            alert('Liste låst! ✅');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingAction = null;
+        }
+
+        // ============= PDF GENERERING =============
+        function generatePDF() {
+            const list = getCurrentList();
+            if (list.items.length === 0) {
+                alert('Listen er tom. Tilføj enheder før PDF-generering.');
+                return;
+            }
+
+            const grouped = {
+                'Tablet': [],
+                'Telefon': [],
+                'PC': []
+            };
+
+            list.items.forEach(item => {
+                if (grouped[item.type]) {
+                    grouped[item.type].push(item);
                 }
             });
 
-            // Metadata
-            doc.setProperties({
-                title: "Enhedsliste PDF",
-                subject: "Liste over scannede enheder",
-                keywords: "Enhed, Tablet, Telefon, PC, PDF, QR, Stregkode",
-                creator: "Rockwool prototype"
+            let html = `
+            <!DOCTYPE html>
+            <html lang="da">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                        color: #333;
+                    }
+                    h1 {
+                        color: #D20014;
+                        border-bottom: 3px solid #D20014;
+                        padding-bottom: 10px;
+                    }
+                    .info {
+                        margin: 15px 0;
+                        font-size: 12px;
+                        color: #656565;
+                    }
+                    .category {
+                        margin-top: 25px;
+                        page-break-inside: avoid;
+                    }
+                    .category-title {
+                        background: #208684;
+                        color: white;
+                        padding: 10px;
+                        margin: 15px 0 10px 0;
+                        font-weight: bold;
+                        font-size: 14px;
+                    }
+                    .item {
+                        display: flex;
+                        align-items: center;
+                        margin: 12px 0;
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        page-break-inside: avoid;
+                    }
+                    .checkbox {
+                        width: 20px;
+                        height: 20px;
+                        margin-right: 15px;
+                        border: 2px solid #333;
+                        display: inline-block;
+                        flex-shrink: 0;
+                    }
+                    .code {
+                        font-family: monospace;
+                        font-weight: bold;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>${list.title}</h1>
+                <div class="info">
+                    <strong>Oprettet:</strong> ${list.createdDate}<br>
+                    ${list.locked ? `<strong>Låst:</strong> ${list.lockedDate}` : ''}
+                </div>
+            `;
+
+            Object.entries(grouped).forEach(([type, items]) => {
+                if (items.length > 0) {
+                    html += `<div class="category">
+                        <div class="category-title">${type} (${items.length})</div>`;
+                    
+                    items.forEach(item => {
+                        html += `<div class="item">
+                            <div class="checkbox"></div>
+                            <div class="code">${item.code}</div>
+                        </div>`;
+                    });
+                    
+                    html += '</div>';
+                }
             });
 
-            doc.save('enhedsliste.pdf');
-        }
-        // Tomme checkbox værdier da vi bruger rects til tjekboksene
-        function checkboxBox() { return " "; }
+            html += `</body></html>`;
 
-        // ----------- Låsning ----------
-        function lockList() {
-            if (listLocked) return;
-            document.getElementById('confirmationDialog').style.display = 'block';
+            const newWindow = window.open('', '', 'width=800,height=600');
+            newWindow.document.write(html);
+            newWindow.document.close();
+            
+            setTimeout(() => {
+                newWindow.print();
+            }, 250);
         }
-        function confirmLock(lock) {
-            document.getElementById('confirmationDialog').style.display = 'none';
-            if (lock) {
-                listLocked = true;
-                document.getElementById('inputSection').style.display = 'none';
-                document.getElementById('lockBtn').disabled = true;
-                renderList();
-            }
+
+        // ============= HJÆLPEFUNKTIONER =============
+        function getCurrentList() {
+            return lists.find(l => l.id === currentListId);
         }
-        renderList();
+
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keypress', (e) => {
+                if (!currentListId) return;
+                
+                const list = getCurrentList();
+                if (list && list.locked) return;
+
+                if (e.key === 'Enter') {
+                    const codeInput = document.getElementById('codeInput');
+                    const deviceType = document.getElementById('deviceType');
+                    
+                    if (document.activeElement === codeInput && deviceType.value) {
+                        handleScan();
+                    }
+                }
+            });
+        }
+
+        // Start app
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
+
