@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhed Scanning App v1.3</title>
+    <title>Enhed Scanning App</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
     <style>
@@ -37,6 +37,7 @@
             border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
@@ -47,6 +48,18 @@
         .header p {
             font-size: 12px;
             opacity: 0.9;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
         }
 
         .list-selector {
@@ -184,12 +197,14 @@
             border-radius: 6px;
             overflow: hidden;
             background: #000;
+            aspect-ratio: 1;
         }
 
         #video {
             width: 100%;
-            height: 300px;
+            height: 100%;
             display: block;
+            object-fit: cover;
         }
 
         .camera-overlay {
@@ -197,12 +212,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
+            width: 60%;
+            height: 60%;
             border: 3px solid #D20014;
             border-radius: 8px;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
             pointer-events: none;
+            z-index: 10;
         }
 
         .camera-controls {
@@ -600,17 +616,6 @@
             color: white;
         }
 
-        .scanned-badge {
-            display: inline-block;
-            background: #208684;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
         .status-message {
             padding: 8px 12px;
             border-radius: 4px;
@@ -663,6 +668,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <div class="version-badge" id="versionBadge">v1.4</div>
             <h1>📱 Enhed Scanning</h1>
             <p>Rockwool Enhed Inventar</p>
         </div>
@@ -696,7 +702,7 @@
                 <!-- Kamera Sektion -->
                 <div id="cameraSection" style="display: none;">
                     <div class="camera-container">
-                        <video id="video" playsinline></video>
+                        <video id="video" playsinline autoplay muted></video>
                         <div class="camera-overlay"></div>
                     </div>
                     <div class="camera-controls">
@@ -798,6 +804,9 @@
     </div>
 
     <script>
+        // ============= APP VERSION =============
+        const APP_VERSION = 'v1.4';
+
         // ============= GLOBALE VARIABLER =============
         let lists = [];
         let currentListId = null;
@@ -812,14 +821,16 @@
             renderListButtons();
             setupKeyboardShortcuts();
             initializeScanner();
+            document.getElementById('versionBadge').textContent = APP_VERSION;
         }
 
         // ============= SCANNER INITIALISERING =============
         function initializeScanner() {
             try {
                 codeReader = new ZXing.BrowserMultiFormatReader();
+                console.log('Scanner initialiseret');
             } catch (e) {
-                console.log('ZXing Scanner initialiseret');
+                console.log('ZXing Scanner initialiseret:', e);
             }
         }
 
@@ -832,22 +843,37 @@
                     videoStream.getTracks().forEach(track => track.stop());
                 }
 
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
-                });
+                const constraints = {
+                    video: { 
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
                 videoStream = stream;
                 video.srcObject = stream;
                 
-                document.getElementById('startCameraBtn').disabled = true;
-                document.getElementById('stopCameraBtn').disabled = false;
-                
-                isScanning = true;
-                scanQRCode();
+                // Vent på at videoen er klar
+                video.onloadedmetadata = () => {
+                    video.play();
+                    document.getElementById('startCameraBtn').disabled = true;
+                    document.getElementById('stopCameraBtn').disabled = false;
+                    
+                    isScanning = true;
+                    scanQRCode();
+                };
+
+                showStatus('Kamera startet - ret koden mod kameraet', 'success');
 
             } catch (err) {
-                showStatus('Kamera kan ikke tilgås. Prøv manuel indtastning.', 'error');
+                showStatus('Kameraadgang nægtet. Tillad kameraadgang i indstillinger.', 'error');
                 console.error('Kamera fejl:', err);
+                document.getElementById('startCameraBtn').disabled = false;
+                document.getElementById('stopCameraBtn').disabled = true;
             }
         }
 
@@ -856,7 +882,11 @@
             
             if (videoStream) {
                 videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
             }
+
+            const video = document.getElementById('video');
+            video.srcObject = null;
 
             document.getElementById('startCameraBtn').disabled = false;
             document.getElementById('stopCameraBtn').disabled = true;
@@ -874,7 +904,12 @@
         }
 
         async function scanQRCode() {
-            if (!isScanning || !codeReader) return;
+            if (!isScanning || !codeReader) {
+                if (isScanning) {
+                    requestAnimationFrame(scanQRCode);
+                }
+                return;
+            }
 
             try {
                 const video = document.getElementById('video');
@@ -889,12 +924,14 @@
 
                     try {
                         const result = codeReader.decodeFromCanvas(canvas);
-                        if (result) {
-                            document.getElementById('codeInput').value = result.text;
-                            showStatus('Kode scannet: ' + result.text, 'success');
+                        if (result && result.getText()) {
+                            const scannedCode = result.getText();
+                            document.getElementById('codeInput').value = scannedCode;
+                            showStatus('✅ Kode scannet: ' + scannedCode, 'success');
                             stopCamera();
                             document.getElementById('cameraSection').style.display = 'none';
                             document.getElementById('deviceType').focus();
+                            return;
                         }
                     } catch (e) {
                         // Ingen kode fundet, fortsæt scanning
@@ -922,7 +959,7 @@
             setTimeout(() => {
                 statusDiv.textContent = '';
                 statusDiv.className = '';
-            }, 3000);
+            }, 4000);
         }
 
         // ============= LOKALT LAGER (LocalStorage) =============
