@@ -1,0 +1,231 @@
+Retur til digi 
+
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <title>Enhedsliste med PDF-eksport</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #F7F7F7; margin: 20px; }
+        h2 { color: #D20014; }
+        .category-btn { background: #208684; color: #fff; border: none; padding: 6px 14px; margin: 4px; cursor: pointer; border-radius: 4px;}
+        .locked { color: #9F000F; font-weight: bold;}
+        .input-section { margin-bottom: 18px; background: #EDEDED; padding: 10px; border-radius: 8px; }
+        .list-section { margin-top: 20px; }
+        .item-row { background: #fff; margin: 4px 0; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .item-actions button { margin-left: 6px; }
+        .checkbox { margin-right: 10px;}
+        .btn { background: #D20014; color: #fff; border: none; padding: 8px 18px; margin: 8px 4px; cursor: pointer; border-radius: 4px;}
+        .btn-secondary { background: #208684;}
+        .btn-lock { background: #9F000F;}
+        .btn:disabled { opacity: 0.7; cursor: not-allowed;}
+        label { font-weight: bold;}
+    </style>
+</head>
+<body>
+    <h2>Enhedsliste</h2>
+    <div class="input-section" id="inputSection">
+        <label>Kategori:</label>
+        <button class="category-btn" onclick="setCategory('Tablet')">Tablet</button>
+        <button class="category-btn" onclick="setCategory('Telefon')">Telefon</button>
+        <button class="category-btn" onclick="setCategory('PC')">PC</button>
+        <span id="selectedCategory"></span>
+        <br><br>
+        <label>Scan kode (kun mock):</label>
+        <input type="text" id="scanInput" placeholder="Simuler scan/kode">
+        <button class="btn-secondary" onclick="simulateScan()">Tilføj (som scan)</button>
+        <br><br>
+        <label>Manuel indtastning:</label><br>
+        <input type="text" id="manualCode" placeholder="Indtast kode manuelt">
+        <input type="text" id="manualNote" placeholder="Evt. note">
+        <button class="btn-secondary" onclick="addManual()">Tilføj manuelt</button>
+    </div>
+    <div class="list-section" id="listSection"></div>
+    <button class="btn" onclick="saveList()">Gem listen</button>
+    <button class="btn" onclick="generatePDF()">Eksporter som PDF (rigtig)</button>
+    <button class="btn-lock" onclick="lockList()" id="lockBtn">Lås listen</button>
+
+    <div id="confirmationDialog" style="display:none; position:fixed; top:20%; left:35%; background:white; border: 2px solid #208684; padding:30px; border-radius:10px;">
+        <p>Er du sikker på, at du vil låse denne liste? Listen kan ikke redigeres herefter.</p>
+        <button class="btn" onclick="confirmLock(true)">Ja, lås</button>
+        <button class="btn-secondary" onclick="confirmLock(false)">Nej</button>
+    </div>
+
+    <script>
+        let selectedCategory = '';
+        let deviceList = [];
+        let listLocked = false;
+
+        function setCategory(cat) {
+            selectedCategory = cat;
+            document.getElementById('selectedCategory').innerText = 'Valgt: ' + cat;
+        }
+
+        function simulateScan() {
+            if (!selectedCategory) {
+                alert('Vælg først kategori');
+                return;
+            }
+            let code = document.getElementById('scanInput').value.trim();
+            if (!code) {
+                alert('Du skal indtaste en kode');
+                return;
+            }
+            addItem(code, selectedCategory, '', false);
+            document.getElementById('scanInput').value = '';
+        }
+
+        function addManual() {
+            if (!selectedCategory) {
+                alert('Vælg først kategori');
+                return;
+            }
+            let code = document.getElementById('manualCode').value.trim();
+            let note = document.getElementById('manualNote').value.trim();
+            if (!code) {
+                alert('Indtast en kode manuelt');
+                return;
+            }
+            addItem(code, selectedCategory, note, false);
+            document.getElementById('manualCode').value = '';
+            document.getElementById('manualNote').value = '';
+        }
+
+        function addItem(code, cat, note, locked) {
+            deviceList.push({
+                id: Date.now() + Math.random(),
+                code: code,
+                category: cat,
+                note: note,
+                locked: locked
+            });
+            renderList();
+        }
+
+        function renderList() {
+            let listHtml = '';
+            if (listLocked) {
+                listHtml += '<div class="locked">LISTEN ER LÅST – ingen redigering mulig</div>';
+            }
+            ['Tablet', 'Telefon', 'PC'].forEach(cat => {
+                let items = deviceList.filter(item => item.category === cat);
+                if (items.length > 0) {
+                    listHtml += `<h3>${cat}</h3>`;
+                    items.forEach(item => {
+                        listHtml += `<div class="item-row">
+                            <input class="checkbox" type="checkbox" disabled>
+                            <span>Kode: ${item.code} ${item.note ? ' | Note: '+item.note : ''}</span>
+                            <div class="item-actions">`;
+                        if (!listLocked) {
+                            listHtml += `<button class="btn-secondary" onclick="editItem(${item.id})">Rediger</button>
+                                 <button class="btn-lock" onclick="deleteItem(${item.id})">Slet</button>`;
+                        }
+                        listHtml += `</div></div>`;
+                    });
+                }
+            });
+            document.getElementById('listSection').innerHTML = listHtml;
+        }
+
+        function editItem(id) {
+            let item = deviceList.find(i => i.id === id);
+            let newCode = prompt('Rediger kode:', item.code);
+            if (newCode != null && newCode.trim() !== '') item.code = newCode.trim();
+            let newNote = prompt('Rediger note:', item.note);
+            if (newNote != null) item.note = newNote.trim();
+            renderList();
+        }
+
+        function deleteItem(id) {
+            deviceList = deviceList.filter(i => i.id !== id);
+            renderList();
+        }
+
+        function saveList() {
+            alert('Listen gemt (mock) – data beholdes lokalt i browseren.');
+        }
+
+        // -------- PDF GENERERING ------------
+        function generatePDF() {
+            if (deviceList.length === 0) {
+                alert('Listen er tom. Tilføj poster før eksport.');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(18);
+            doc.setTextColor(210,0,20);
+            doc.text("Enhedsliste", 15, 15);
+
+            doc.setFontSize(11);
+            doc.setTextColor(40,40,40);
+            doc.text('Genereret: ' + (new Date()).toLocaleString('da-DK'), 15, 22);
+
+            let y = 32;
+            ['Tablet', 'Telefon', 'PC'].forEach(cat => {
+                // find items for denne kategori
+                let items = deviceList.filter(item => item.category === cat);
+                if (items.length > 0) {
+                    doc.setFontSize(14);
+                    doc.setTextColor(32,134,132);
+                    doc.text(cat, 15, y);
+                    y += 6;
+                    doc.autoTable({
+                        startY: y,
+                        styles: { fontSize:11 },
+                        head: [['Tjek', 'Kode', 'Note']],
+                        body: items.map(i => [checkboxBox(), i.code, i.note || '']),
+                        theme: 'grid',
+                        headStyles: {fillColor:[210,0,20]},
+                        columnStyles: {
+                            0: {cellWidth: 18, valign: 'middle', halign:'center'},
+                            1: {cellWidth: 60}
+                        },
+                        didDrawCell: function(data) {
+                            // Draw checkbox manually if in "Tjek" column
+                            if(data.column.index === 0 && data.cell.section === 'body') {
+                                let x = data.cell.x + 6;
+                                let y = data.cell.y + 2;
+                                // Tegn firkant
+                                doc.rect(x, y, 6, 6);
+                            }
+                        }
+                    });
+                    y = doc.lastAutoTable.finalY + 8; // få næste y position
+                }
+            });
+
+            // Metadata
+            doc.setProperties({
+                title: "Enhedsliste PDF",
+                subject: "Liste over scannede enheder",
+                keywords: "Enhed, Tablet, Telefon, PC, PDF, QR, Stregkode",
+                creator: "Rockwool prototype"
+            });
+
+            doc.save('enhedsliste.pdf');
+        }
+        // Tomme checkbox værdier da vi bruger rects til tjekboksene
+        function checkboxBox() { return " "; }
+
+        // ----------- Låsning ----------
+        function lockList() {
+            if (listLocked) return;
+            document.getElementById('confirmationDialog').style.display = 'block';
+        }
+        function confirmLock(lock) {
+            document.getElementById('confirmationDialog').style.display = 'none';
+            if (lock) {
+                listLocked = true;
+                document.getElementById('inputSection').style.display = 'none';
+                document.getElementById('lockBtn').disabled = true;
+                renderList();
+            }
+        }
+        renderList();
+    </script>
+</body>
+</html>
