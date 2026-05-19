@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhed Scanning App</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
+    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -101,11 +101,6 @@
             color: white;
         }
 
-        .list-btn.active {
-            background: #208684;
-            color: white;
-        }
-
         .list-btn small {
             display: block;
             font-size: 11px;
@@ -189,15 +184,18 @@
             font-size: 14px;
         }
 
-        #qr-reader {
+        #scanner {
             width: 100%;
+            max-height: 400px;
             margin-bottom: 12px;
             border-radius: 6px;
             overflow: hidden;
+            display: none;
         }
 
-        #qr-reader video {
+        #scanner video {
             width: 100%;
+            height: 100%;
         }
 
         .camera-controls {
@@ -647,7 +645,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="version-badge" id="versionBadge">v1.4</div>
+            <div class="version-badge" id="versionBadge">v1.5</div>
             <h1>📱 Enhed Scanning</h1>
             <p>Rockwool Enhed Inventar</p>
         </div>
@@ -678,8 +676,8 @@
                 
                 <div id="statusMessage"></div>
 
-                <!-- QR Scanner -->
-                <div id="qr-reader" style="display: none;"></div>
+                <!-- Scanner -->
+                <video id="scanner"></video>
 
                 <div class="camera-controls" id="cameraControls" style="display: none;">
                     <button class="btn-camera active" id="startCameraBtn" onclick="startCamera()">📷 Start Kamera</button>
@@ -780,14 +778,13 @@
 
     <script>
         // ============= APP VERSION =============
-        const APP_VERSION = 'v1.4';
+        const APP_VERSION = 'v1.5';
 
         // ============= GLOBALE VARIABLER =============
         let lists = [];
         let currentListId = null;
         let pendingAction = null;
-        let html5QrcodeScanner = null;
-        let isScannerRunning = false;
+        let scanner = null;
 
         // ============= INITIALISERING =============
         function init() {
@@ -800,49 +797,49 @@
         // ============= KAMERA FUNKTIONER =============
         async function startCamera() {
             try {
-                if (html5QrcodeScanner) {
-                    await html5QrcodeScanner.clear();
+                if (scanner) {
+                    scanner.stop();
                 }
 
-                const qrReader = document.getElementById('qr-reader');
-                qrReader.innerHTML = '';
+                scanner = new Instascan.Scanner({
+                    video: document.getElementById('scanner'),
+                    autoFocus: true,
+                    mirror: false,
+                    maxScans: null,
+                    refractoryPeriod: 5000,
+                    delayBetweenFrameCaptures: 0
+                });
 
-                html5QrcodeScanner = new Html5Qrcode('qr-reader');
+                scanner.addListener('scan', function(content) {
+                    onScanSuccess(content);
+                });
 
-                const config = {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0,
-                    disableFlip: false
-                };
+                const cameras = await Instascan.Camera.request();
+                
+                if (cameras.length === 0) {
+                    showStatus('Ingen kamera fundet på enheden', 'error');
+                    return;
+                }
 
-                await html5QrcodeScanner.start(
-                    { facingMode: { ideal: 'environment' } },
-                    config,
-                    onScanSuccess,
-                    onScanError
-                );
+                // Vælg bagest kamera (miljø kamera på mobil)
+                const camera = cameras.length > 1 ? cameras[cameras.length - 1] : cameras[0];
+                
+                await scanner.start(camera);
 
-                isScannerRunning = true;
                 document.getElementById('startCameraBtn').disabled = true;
                 document.getElementById('stopCameraBtn').disabled = false;
                 showStatus('📷 Kamera startet - ret koden mod kameraet', 'success');
 
             } catch (err) {
-                showStatus('Kamera kunne ikke åbnes. Tillad kameraadgang.', 'error');
+                showStatus('Kamera kunne ikke åbnes. Tillad kameraadgang i indstillinger.', 'error');
                 console.error('Kamera fejl:', err);
             }
         }
 
         function stopCamera() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    html5QrcodeScanner.clear();
-                    isScannerRunning = false;
-                }).catch(err => {
-                    console.log('Stop kamera fejl:', err);
-                    isScannerRunning = false;
-                });
+            if (scanner) {
+                scanner.stop();
+                scanner = null;
             }
 
             document.getElementById('startCameraBtn').disabled = false;
@@ -850,32 +847,27 @@
         }
 
         function toggleCamera() {
-            const qrReader = document.getElementById('qr-reader');
+            const scannerEl = document.getElementById('scanner');
             const cameraControls = document.getElementById('cameraControls');
             
-            if (qrReader.style.display === 'none') {
-                qrReader.style.display = 'block';
+            if (scannerEl.style.display === 'none') {
+                scannerEl.style.display = 'block';
                 cameraControls.style.display = 'flex';
                 startCamera();
             } else {
-                qrReader.style.display = 'none';
+                scannerEl.style.display = 'none';
                 cameraControls.style.display = 'none';
                 stopCamera();
             }
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            document.getElementById('codeInput').value = decodedText;
-            showStatus('✅ Kode scannet: ' + decodedText, 'success');
+        function onScanSuccess(content) {
+            document.getElementById('codeInput').value = content;
+            showStatus('✅ Kode scannet: ' + content, 'success');
             stopCamera();
-            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('scanner').style.display = 'none';
             document.getElementById('cameraControls').style.display = 'none';
             document.getElementById('deviceType').focus();
-        }
-
-        function onScanError(error) {
-            // Stille fejl - det er normal at der ikke findes en kode
-            console.log('Scan fejl:', error);
         }
 
         // ============= STATUS BESKED =============
@@ -1318,8 +1310,8 @@
         // Start app
         window.addEventListener('load', init);
         window.addEventListener('beforeunload', () => {
-            if (html5QrcodeScanner && isScannerRunning) {
-                html5QrcodeScanner.stop();
+            if (scanner) {
+                scanner.stop();
             }
         });
     </script>
