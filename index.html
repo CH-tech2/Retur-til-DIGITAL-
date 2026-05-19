@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhed Scanning App</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -190,35 +189,15 @@
             font-size: 14px;
         }
 
-        .camera-container {
-            position: relative;
+        #qr-reader {
             width: 100%;
             margin-bottom: 12px;
             border-radius: 6px;
             overflow: hidden;
-            background: #000;
-            aspect-ratio: 1;
         }
 
-        #video {
+        #qr-reader video {
             width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: cover;
-        }
-
-        .camera-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60%;
-            height: 60%;
-            border: 3px solid #D20014;
-            border-radius: 8px;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            z-index: 10;
         }
 
         .camera-controls {
@@ -699,16 +678,12 @@
                 
                 <div id="statusMessage"></div>
 
-                <!-- Kamera Sektion -->
-                <div id="cameraSection" style="display: none;">
-                    <div class="camera-container">
-                        <video id="video" playsinline autoplay muted></video>
-                        <div class="camera-overlay"></div>
-                    </div>
-                    <div class="camera-controls">
-                        <button class="btn-camera active" id="startCameraBtn" onclick="startCamera()">📷 Start Kamera</button>
-                        <button class="btn-camera" id="stopCameraBtn" onclick="stopCamera()" disabled>⛔ Stop Kamera</button>
-                    </div>
+                <!-- QR Scanner -->
+                <div id="qr-reader" style="display: none;"></div>
+
+                <div class="camera-controls" id="cameraControls" style="display: none;">
+                    <button class="btn-camera active" id="startCameraBtn" onclick="startCamera()">📷 Start Kamera</button>
+                    <button class="btn-camera" id="stopCameraBtn" onclick="stopCamera()" disabled>⛔ Stop Kamera</button>
                 </div>
 
                 <!-- Manual Input -->
@@ -811,143 +786,96 @@
         let lists = [];
         let currentListId = null;
         let pendingAction = null;
-        let codeReader = null;
-        let videoStream = null;
-        let isScanning = false;
+        let html5QrcodeScanner = null;
+        let isScannerRunning = false;
 
         // ============= INITIALISERING =============
         function init() {
             loadLists();
             renderListButtons();
             setupKeyboardShortcuts();
-            initializeScanner();
             document.getElementById('versionBadge').textContent = APP_VERSION;
-        }
-
-        // ============= SCANNER INITIALISERING =============
-        function initializeScanner() {
-            try {
-                codeReader = new ZXing.BrowserMultiFormatReader();
-                console.log('Scanner initialiseret');
-            } catch (e) {
-                console.log('ZXing Scanner initialiseret:', e);
-            }
         }
 
         // ============= KAMERA FUNKTIONER =============
         async function startCamera() {
             try {
-                const video = document.getElementById('video');
-                
-                if (videoStream) {
-                    videoStream.getTracks().forEach(track => track.stop());
+                if (html5QrcodeScanner) {
+                    await html5QrcodeScanner.clear();
                 }
 
-                const constraints = {
-                    video: { 
-                        facingMode: { ideal: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: false
+                const qrReader = document.getElementById('qr-reader');
+                qrReader.innerHTML = '';
+
+                html5QrcodeScanner = new Html5Qrcode('qr-reader');
+
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    disableFlip: false
                 };
 
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                await html5QrcodeScanner.start(
+                    { facingMode: { ideal: 'environment' } },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
 
-                videoStream = stream;
-                video.srcObject = stream;
-                
-                // Vent på at videoen er klar
-                video.onloadedmetadata = () => {
-                    video.play();
-                    document.getElementById('startCameraBtn').disabled = true;
-                    document.getElementById('stopCameraBtn').disabled = false;
-                    
-                    isScanning = true;
-                    scanQRCode();
-                };
-
-                showStatus('Kamera startet - ret koden mod kameraet', 'success');
+                isScannerRunning = true;
+                document.getElementById('startCameraBtn').disabled = true;
+                document.getElementById('stopCameraBtn').disabled = false;
+                showStatus('📷 Kamera startet - ret koden mod kameraet', 'success');
 
             } catch (err) {
-                showStatus('Kameraadgang nægtet. Tillad kameraadgang i indstillinger.', 'error');
+                showStatus('Kamera kunne ikke åbnes. Tillad kameraadgang.', 'error');
                 console.error('Kamera fejl:', err);
-                document.getElementById('startCameraBtn').disabled = false;
-                document.getElementById('stopCameraBtn').disabled = true;
             }
         }
 
         function stopCamera() {
-            isScanning = false;
-            
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-                videoStream = null;
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    isScannerRunning = false;
+                }).catch(err => {
+                    console.log('Stop kamera fejl:', err);
+                    isScannerRunning = false;
+                });
             }
-
-            const video = document.getElementById('video');
-            video.srcObject = null;
 
             document.getElementById('startCameraBtn').disabled = false;
             document.getElementById('stopCameraBtn').disabled = true;
         }
 
         function toggleCamera() {
-            const cameraSection = document.getElementById('cameraSection');
-            if (cameraSection.style.display === 'none') {
-                cameraSection.style.display = 'block';
+            const qrReader = document.getElementById('qr-reader');
+            const cameraControls = document.getElementById('cameraControls');
+            
+            if (qrReader.style.display === 'none') {
+                qrReader.style.display = 'block';
+                cameraControls.style.display = 'flex';
                 startCamera();
             } else {
-                cameraSection.style.display = 'none';
+                qrReader.style.display = 'none';
+                cameraControls.style.display = 'none';
                 stopCamera();
             }
         }
 
-        async function scanQRCode() {
-            if (!isScanning || !codeReader) {
-                if (isScanning) {
-                    requestAnimationFrame(scanQRCode);
-                }
-                return;
-            }
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('codeInput').value = decodedText;
+            showStatus('✅ Kode scannet: ' + decodedText, 'success');
+            stopCamera();
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('cameraControls').style.display = 'none';
+            document.getElementById('deviceType').focus();
+        }
 
-            try {
-                const video = document.getElementById('video');
-                
-                if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0);
-
-                    try {
-                        const result = codeReader.decodeFromCanvas(canvas);
-                        if (result && result.getText()) {
-                            const scannedCode = result.getText();
-                            document.getElementById('codeInput').value = scannedCode;
-                            showStatus('✅ Kode scannet: ' + scannedCode, 'success');
-                            stopCamera();
-                            document.getElementById('cameraSection').style.display = 'none';
-                            document.getElementById('deviceType').focus();
-                            return;
-                        }
-                    } catch (e) {
-                        // Ingen kode fundet, fortsæt scanning
-                    }
-                }
-
-                if (isScanning) {
-                    requestAnimationFrame(scanQRCode);
-                }
-
-            } catch (err) {
-                console.error('Scan fejl:', err);
-                if (isScanning) {
-                    requestAnimationFrame(scanQRCode);
-                }
-            }
+        function onScanError(error) {
+            // Stille fejl - det er normal at der ikke findes en kode
+            console.log('Scan fejl:', error);
         }
 
         // ============= STATUS BESKED =============
@@ -1119,12 +1047,12 @@
             const type = document.getElementById('deviceType').value;
 
             if (!code) {
-                showStatus('Venligst scan en kode eller skriv en kode manuelt', 'error');
+                showStatus('❌ Venligst scan en kode eller skriv en kode manuelt', 'error');
                 return;
             }
 
             if (!type) {
-                showStatus('Venligst vælg en enhedstype', 'error');
+                showStatus('❌ Venligst vælg en enhedstype', 'error');
                 return;
             }
 
@@ -1165,7 +1093,7 @@
             const type = document.getElementById('editDeviceTypeInput').value;
 
             if (!code || !type) {
-                showStatus('Både kode og enhedstype skal udfyldes', 'error');
+                showStatus('❌ Både kode og enhedstype skal udfyldes', 'error');
                 return;
             }
 
@@ -1203,7 +1131,7 @@
             const newTitle = document.getElementById('newTitleInput').value.trim();
 
             if (!newTitle) {
-                showStatus('Titel kan ikke være tom', 'error');
+                showStatus('❌ Titel kan ikke være tom', 'error');
                 return;
             }
 
@@ -1258,7 +1186,7 @@
         function generatePDF() {
             const list = getCurrentList();
             if (list.items.length === 0) {
-                showStatus('Listen er tom. Tilføj enheder før PDF-generering.', 'error');
+                showStatus('❌ Listen er tom. Tilføj enheder før PDF-generering.', 'error');
                 return;
             }
 
@@ -1390,8 +1318,8 @@
         // Start app
         window.addEventListener('load', init);
         window.addEventListener('beforeunload', () => {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
+            if (html5QrcodeScanner && isScannerRunning) {
+                html5QrcodeScanner.stop();
             }
         });
     </script>
