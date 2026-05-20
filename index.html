@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhed Scanning App</title>
-    <!-- OPDATERET: Brug Quagga2 for QR-støtte -->
+    <!-- OPDATERET: Brug Quagga2 for QR & stregkode support -->
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
     <style>
-        /* --- ALT DIN CSS FRA VERSION 1.6 NEDENFOR (URETSTET) --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 10px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 15px; min-height: 100vh; }
@@ -107,26 +106,460 @@
     </style>
 </head>
 <body>
-    <!-- --- ALT DIN HTML FRA VERSION 1.6 UFORDRÆNGET --- -->
     <div class="container">
         <div class="header">
             <div class="version-badge" id="versionBadge">v1.8</div>
             <h1>📱 Enhed Scanning</h1>
             <p>Rockwool Enhed Inventar</p>
         </div>
-        <!-- Liste Vælger og Hovedindhold --->
-        <!-- ... (Alt er uændret fra v1.6, din kode her) ... -->
-        <!-- ... Resten af HTML ... -->
+        <!-- Liste Vælger -->
+        <div class="list-selector" id="listSelector">
+            <button class="btn-new-list" onclick="createNewList()">➕ Ny Liste</button>
+            <h2>Tidligere Lister</h2>
+            <div class="list-buttons" id="listButtons">
+                <p class="no-lists-message">Ingen lister endnu. Opret en ny liste for at komme i gang!</p>
+            </div>
+        </div>
+        <!-- Hovedindhold -->
+        <div id="mainContent" style="display: none;">
+            <div class="list-title-section">
+                <h2 id="listTitle">Min Liste</h2>
+                <p id="listCreatedDate">Oprettet: </p>
+                <p id="listLockedDate" style="display: none;">Låst: </p>
+                <button class="edit-title-btn" onclick="editListTitle()" id="editTitleBtn">Rediger titel</button>
+                <div class="locked-badge" id="lockedBadge" style="display: none;">🔒 LÅST LISTE</div>
+            </div>
+            <div class="scanning-section" id="scanningSection">
+                <h3>📸 Scan eller Manual Indtastning</h3>
+                <div id="statusMessage"></div>
+                <div id="interactive" class="viewport"></div>
+                <div class="camera-controls" id="cameraControls" style="display: none;">
+                    <button class="btn-camera active" id="startCameraBtn" onclick="startCamera()">📷 Start Kamera</button>
+                    <button class="btn-camera" id="stopCameraBtn" onclick="stopCamera()" disabled>⛔ Stop Kamera</button>
+                </div>
+                <div class="input-group">
+                    <label for="codeInput">Stregkode / QR Kode</label>
+                    <input type="text" id="codeInput" placeholder="Scan kode eller skriv manuelt..." autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="deviceType">Vælg Enhedstype</label>
+                    <select id="deviceType">
+                        <option value="">-- Vælg enhedstype --</option>
+                        <option value="Tablet">📱 Tablet</option>
+                        <option value="Telefon">☎️ Telefon</option>
+                        <option value="PC">💻 PC</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-scan" id="scanBtn" onclick="toggleCamera()">📷 Åbn Kamera</button>
+                    <button class="btn btn-manual" id="manualBtn" onclick="focusCodeInput()">⌨️ Tastatur</button>
+                    <button class="btn btn-scan" id="addBtn" onclick="handleScan()">✅ Tilføj</button>
+                </div>
+            </div>
+            <div class="items-section" id="itemsSection" style="display: none;">
+                <h3>📋 Registrerede Enheder</h3>
+                <div id="itemsList"></div>
+            </div>
+            <div id="emptyItems" class="empty-message">
+                Ingen enheder registreret endnu. Begynd med at scanne eller tilføj manuelt.
+            </div>
+            <div class="action-buttons">
+                <button class="btn-save" id="saveBtn" onclick="saveList()">💾 Gem Liste</button>
+                <button class="btn-pdf" id="pdfBtn" onclick="generatePDF()">📄 PDF</button>
+                <button class="btn-lock" id="lockBtn" onclick="showLockConfirm()">🔒 Lås Liste</button>
+            </div>
+        </div>
     </div>
-    <!-- Modaler ... -->
-    <!-- ... (din v1.6 HTML kopieret ind her) ... -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h3>Bekræftelse</h3>
+            <p id="confirmMessage"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn-cancel" onclick="closeModal()">Annuller</button>
+                <button class="modal-btn-confirm" id="confirmBtn" onclick="confirmAction()">Ja, fortsæt</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="editTitleModal">
+        <div class="modal-content edit-modal">
+            <h3>Rediger Listetitel</h3>
+            <div class="input-group">
+                <label for="newTitleInput">Ny Titel</label>
+                <input type="text" id="newTitleInput" placeholder="Skriv ny titel...">
+            </div>
+            <div class="edit-modal-buttons">
+                <button class="edit-btn-cancel" onclick="closeEditTitleModal()">Annuller</button>
+                <button class="edit-btn-save" onclick="saveNewTitle()">Gem Titel</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="editItemModal">
+        <div class="modal-content edit-modal">
+            <h3>Rediger Enhed</h3>
+            <div class="input-group">
+                <label for="editCodeInput">Stregkode / QR Kode</label>
+                <input type="text" id="editCodeInput" placeholder="Stregkode...">
+            </div>
+            <div class="input-group">
+                <label for="editDeviceTypeInput">Enhedstype</label>
+                <select id="editDeviceTypeInput">
+                    <option value="Tablet">📱 Tablet</option>
+                    <option value="Telefon">☎️ Telefon</option>
+                    <option value="PC">💻 PC</option>
+                </select>
+            </div>
+            <div class="edit-modal-buttons">
+                <button class="edit-btn-cancel" onclick="closeEditItemModal()">Annuller</button>
+                <button class="edit-btn-save" onclick="saveEditedItem()">Gem Ændringer</button>
+            </div>
+        </div>
+    </div>
     <script>
-        // --- ALT DIN JAVASCRIPT FRA VERSION 1.6 UFORDRÆNGET ---
-        // ============= APP VERSION =============
         const APP_VERSION = 'v1.8';
-        // ... (hele resten af din JS præcis som version 1.6) ...
-        // Koden til scanning mm. er UÆNDRET!
-        // Quagga.init bruger nu qr_reader og de andre readers (det virker med Quagga2!)
+        let lists = [];
+        let currentListId = null;
+        let pendingAction = null;
+        let cameraActive = false;
+        let quaggaHandler = null;
+        function init() {
+            loadLists();
+            renderListButtons();
+            setupKeyboardShortcuts();
+            document.getElementById('versionBadge').textContent = APP_VERSION;
+        }
+        function startCamera() {
+            document.getElementById('interactive').style.display = 'block';
+            document.getElementById('cameraControls').style.display = 'flex';
+            showStatus('🔄 Starter kamera...', 'info');
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#interactive'),
+                    constraints: {
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "qr_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.log(err);
+                    showStatus('❌ Kamera fejl. Prøv manuel indtastning.', 'error');
+                    return;
+                }
+                Quagga.start();
+                cameraActive = true;
+                document.getElementById('startCameraBtn').disabled = true;
+                document.getElementById('stopCameraBtn').disabled = false;
+                showStatus('✅ Kamera klar - hold kode mod kameraet', 'success');
+            });
+            if (quaggaHandler !== null) Quagga.offDetected(quaggaHandler);
+            quaggaHandler = function(result) {
+                if (result.codeResult && result.codeResult.code) {
+                    onScanSuccess(result.codeResult.code);
+                }
+            };
+            Quagga.onDetected(quaggaHandler);
+        }
+        function stopCamera() {
+            if (cameraActive) {
+                Quagga.stop();
+                cameraActive = false;
+            }
+            document.getElementById('startCameraBtn').disabled = false;
+            document.getElementById('stopCameraBtn').disabled = true;
+            document.getElementById('interactive').style.display = 'none';
+            document.getElementById('cameraControls').style.display = 'none';
+            if (quaggaHandler) Quagga.offDetected(quaggaHandler);
+            quaggaHandler = null;
+        }
+        function toggleCamera() {
+            const interactive = document.getElementById('interactive');
+            const cameraControls = document.getElementById('cameraControls');
+            if (interactive.style.display === 'none') {
+                startCamera();
+            } else {
+                stopCamera();
+            }
+        }
+        function onScanSuccess(content) {
+            document.getElementById('codeInput').value = content;
+            showStatus('✅ Kode scannet: ' + content, 'success');
+            stopCamera();
+            document.getElementById('deviceType').focus();
+        }
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message status-' + type;
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+            }, 4000);
+        }
+        function loadLists() {
+            const saved = localStorage.getItem('lists');
+            lists = saved ? JSON.parse(saved) : [];
+        }
+        function saveLists() {
+            localStorage.setItem('lists', JSON.stringify(lists));
+        }
+        function createNewList() {
+            const title = prompt('Hvad skal listen hedde?', 'Min enhedsliste');
+            if (!title) return;
+            const newList = { id: Date.now(), title: title, items: [], createdDate: new Date().toLocaleString('da-DK'), lockedDate: null, locked: false };
+            lists.unshift(newList);
+            saveLists();
+            selectList(newList.id);
+            renderListButtons();
+        }
+        function selectList(listId) {
+            currentListId = listId;
+            stopCamera();
+            document.getElementById('listSelector').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            renderCurrentList();
+        }
+        function goBackToLists() {
+            stopCamera();
+            currentListId = null;
+            document.getElementById('listSelector').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+        }
+        function renderListButtons() {
+            const buttonsContainer = document.getElementById('listButtons');
+            if (lists.length === 0) {
+                buttonsContainer.innerHTML = '<p class="no-lists-message">Ingen lister endnu. Opret en ny liste for at komme i gang!</p>';
+                return;
+            }
+            buttonsContainer.innerHTML = lists.map(list => `
+                <button class="list-btn" onclick="selectList(${list.id})">
+                    ${list.title}
+                    <small>Oprettet: ${list.createdDate}${list.locked ? '<br>🔒 Låst: ' + list.lockedDate : ''}</small>
+                </button>
+            `).join('');
+        }
+        function renderCurrentList() {
+            const list = getCurrentList();
+            if (!list) return;
+            document.getElementById('listTitle').textContent = list.title;
+            document.getElementById('listCreatedDate').textContent = `Oprettet: ${list.createdDate}`;
+            const lockedBadge = document.getElementById('lockedBadge');
+            const lockedDate = document.getElementById('listLockedDate');
+            const scanningSection = document.getElementById('scanningSection');
+            const saveBtn = document.getElementById('saveBtn');
+            const editTitleBtn = document.getElementById('editTitleBtn');
+            if (list.locked) {
+                lockedBadge.style.display = 'inline-block';
+                lockedDate.style.display = 'block';
+                lockedDate.textContent = `Låst: ${list.lockedDate}`;
+                scanningSection.style.display = 'none';
+                saveBtn.style.display = 'none';
+                editTitleBtn.style.display = 'none';
+            } else {
+                lockedBadge.style.display = 'none';
+                lockedDate.style.display = 'none';
+                scanningSection.style.display = 'block';
+                saveBtn.style.display = 'block';
+                editTitleBtn.style.display = 'block';
+                document.getElementById('codeInput').focus();
+            }
+            renderItems();
+        }
+        function renderItems() {
+            const list = getCurrentList();
+            const itemsList = document.getElementById('itemsList');
+            const itemsSection = document.getElementById('itemsSection');
+            const emptyItems = document.getElementById('emptyItems');
+            if (!list || list.items.length === 0) {
+                itemsSection.style.display = 'none';
+                emptyItems.style.display = 'block';
+                return;
+            }
+            itemsSection.style.display = 'block';
+            emptyItems.style.display = 'none';
+            const grouped = { 'Tablet': [], 'Telefon': [], 'PC': [] };
+            list.items.forEach((item, idx) => {
+                if (grouped[item.type]) {
+                    grouped[item.type].push({ ...item, index: idx });
+                }
+            });
+            let html = '';
+            Object.entries(grouped).forEach(([type, items]) => {
+                if (items.length > 0) {
+                    html += `<div class="category-group">
+                        <div class="category-title">${type} (${items.length})</div>`;
+                    items.forEach(item => {
+                        html += `<div class="item">
+                            <div class="item-content">
+                                <div class="item-code">${item.code}</div>
+                                <div class="item-category">${item.type}</div>
+                            </div>
+                            <div class="item-actions" ${list.locked ? 'style="display:none"' : ''}>
+                                <button class="btn-edit-item" onclick="editItem(${item.index})">Rediger</button>
+                                <button class="btn-delete-item" onclick="deleteItem(${item.index})">Slet</button>
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+            });
+            itemsList.innerHTML = html;
+        }
+        function handleScan() {
+            const code = document.getElementById('codeInput').value.trim();
+            const type = document.getElementById('deviceType').value;
+            if (!code) { showStatus('❌ Venligst scan en kode eller skriv en kode manuelt', 'error'); return; }
+            if (!type) { showStatus('❌ Venligst vælg en enhedstype', 'error'); return; }
+            const list = getCurrentList();
+            list.items.push({ code: code, type: type, addedDate: new Date().toLocaleString('da-DK') });
+            showStatus('✅ Enhed tilføjet!', 'success');
+            document.getElementById('codeInput').value = '';
+            document.getElementById('deviceType').value = '';
+            renderItems();
+            document.getElementById('codeInput').focus();
+        }
+        function focusCodeInput() { document.getElementById('codeInput').focus(); }
+        function editItem(index) {
+            const list = getCurrentList();
+            const item = list.items[index];
+            document.getElementById('editCodeInput').value = item.code;
+            document.getElementById('editDeviceTypeInput').value = item.type;
+            document.getElementById('editItemModal').dataset.itemIndex = index;
+            document.getElementById('editItemModal').classList.add('active');
+        }
+        function saveEditedItem() {
+            const index = parseInt(document.getElementById('editItemModal').dataset.itemIndex);
+            const list = getCurrentList();
+            const code = document.getElementById('editCodeInput').value.trim();
+            const type = document.getElementById('editDeviceTypeInput').value;
+            if (!code || !type) {
+                showStatus('❌ Både kode og enhedstype skal udfyldes', 'error'); return;
+            }
+            list.items[index].code = code;
+            list.items[index].type = type;
+            closeEditItemModal();
+            renderItems();
+            showStatus('✅ Enhed opdateret!', 'success');
+        }
+        function closeEditItemModal() { document.getElementById('editItemModal').classList.remove('active'); }
+        function deleteItem(index) {
+            if (confirm('Slet denne enhed?')) {
+                const list = getCurrentList();
+                list.items.splice(index, 1);
+                renderItems();
+                showStatus('✅ Enhed slettet!', 'success');
+            }
+        }
+        function editListTitle() {
+            const list = getCurrentList();
+            document.getElementById('newTitleInput').value = list.title;
+            document.getElementById('editTitleModal').classList.add('active');
+            document.getElementById('newTitleInput').focus();
+        }
+        function saveNewTitle() {
+            const list = getCurrentList();
+            const newTitle = document.getElementById('newTitleInput').value.trim();
+            if (!newTitle) {
+                showStatus('❌ Titel kan ikke være tom', 'error'); return;
+            }
+            list.title = newTitle;
+            saveLists();
+            closeEditTitleModal();
+            renderListButtons();
+            renderCurrentList();
+            showStatus('✅ Titel opdateret!', 'success');
+        }
+        function closeEditTitleModal() { document.getElementById('editTitleModal').classList.remove('active'); }
+        function saveList() { saveLists(); showStatus('✅ Liste gemt!', 'success'); }
+        function showLockConfirm() {
+            document.getElementById('confirmMessage').textContent = 'Er du sikker på at du vil låse denne liste? Du kan ikke redigere den efter låsning.';
+            pendingAction = 'lock';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+        function confirmAction() {
+            if (pendingAction === 'lock') { lockList(); }
+            closeModal();
+        }
+        function lockList() {
+            const list = getCurrentList();
+            list.locked = true;
+            list.lockedDate = new Date().toLocaleString('da-DK');
+            saveLists();
+            renderCurrentList();
+            renderListButtons();
+            showStatus('✅ Liste låst!', 'success');
+        }
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingAction = null;
+        }
+        function generatePDF() {
+            const list = getCurrentList();
+            if (list.items.length === 0) {
+                showStatus('❌ Listen er tom. Tilføj enheder før PDF-generering.', 'error'); return;
+            }
+            const grouped = { 'Tablet': [], 'Telefon': [], 'PC': [] };
+            list.items.forEach(item => {
+                if (grouped[item.type]) {
+                    grouped[item.type].push(item);
+                }
+            });
+            let html = `
+            <!DOCTYPE html>
+            <html lang="da">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+                    h1 { color: #D20014; border-bottom: 3px solid #D20014; padding-bottom: 10px; }
+                    .info { margin: 15px 0; font-size: 12px; color: #656565; }
+                    .category { margin-top: 25px; page-break-inside: avoid; }
+                    .category-title { background: #208684; color: white; padding: 10px; margin: 15px 0 10px 0; font-weight: bold; font-size: 14px; }
+                    .item { display: flex; align-items: center; margin: 12px 0; padding: 10px; border: 1px solid #ddd; page-break-inside: avoid; }
+                    .checkbox { width: 20px; height: 20px; margin-right: 15px; border: 2px solid #333; display: inline-block; flex-shrink: 0; }
+                    .code { font-family: monospace; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <h1>${list.title}</h1>
+                <div class="info"><strong>Oprettet:</strong> ${list.createdDate}<br>${list.locked ? `<strong>Låst:</strong> ${list.lockedDate}` : ''}</div>
+            `;
+            Object.entries(grouped).forEach(([type, items]) => {
+                if (items.length > 0) {
+                    html += `<div class="category">
+                        <div class="category-title">${type} (${items.length})</div>`;
+                    items.forEach(item => {
+                        html += `<div class="item"><div class="checkbox"></div><div class="code">${item.code}</div></div>`;
+                    });
+                    html += '</div>';
+                }
+            });
+            html += `</body></html>`;
+            const newWindow = window.open('', '', 'width=800,height=600');
+            newWindow.document.write(html);
+            newWindow.document.close();
+            setTimeout(() => { newWindow.print(); }, 250);
+        }
+        function getCurrentList() { return lists.find(l => l.id === currentListId); }
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keypress', (e) => {
+                if (!currentListId) return;
+                const list = getCurrentList();
+                if (list && list.locked) return;
+                if (e.key === 'Enter') {
+                    const codeInput = document.getElementById('codeInput');
+                    const deviceType = document.getElementById('deviceType');
+                    if (document.activeElement === codeInput && deviceType.value) { handleScan(); }
+                }
+            });
+        }
+        window.addEventListener('load', init);
+        window.addEventListener('beforeunload', () => { if (cameraActive) { stopCamera(); } });
     </script>
 </body>
 </html>
