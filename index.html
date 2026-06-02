@@ -1,14 +1,12 @@
-```html
 <!DOCTYPE html>
 <html lang="da">
 
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Enhed Scanner OCR</title>
+<title>OCR Enhed Scanner</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -22,87 +20,106 @@
 
 body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-    background:#f5f5f5;
+    background:#f4f4f4;
     padding:10px;
     color:#333;
 }
 
 .container{
-    max-width:600px;
+    max-width:700px;
     margin:0 auto;
     background:white;
-    border-radius:8px;
+    border-radius:12px;
     padding:15px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 
 .header{
     background:linear-gradient(135deg,#D20014 0%,#9F000F 100%);
     color:white;
     padding:20px;
-    border-radius:8px;
+    border-radius:10px;
+    text-align:center;
     margin-bottom:20px;
-    text-align:center;
 }
 
-.scanning-section{
-    background:#f0f8f7;
-    padding:15px;
-    border-radius:8px;
+.header h1{
+    font-size:28px;
+    margin-bottom:5px;
+}
+
+.header p{
+    opacity:0.9;
+}
+
+.scanner-box{
+    background:#eef7f6;
     border:2px solid #208684;
+    border-radius:10px;
+    padding:15px;
+    margin-bottom:20px;
 }
 
-#cameraWrapper{
-    display:none;
+.scanner-title{
     text-align:center;
+    margin-bottom:15px;
+    color:#208684;
+    font-weight:700;
+    font-size:20px;
+}
+
+.camera-wrapper{
+    position:relative;
+    display:none;
+    justify-content:center;
     margin-bottom:15px;
 }
 
 video{
     width:100%;
-    max-width:240px;
-    height:160px;
+    max-width:320px;
+    height:220px;
     object-fit:cover;
     border-radius:10px;
     background:black;
 }
 
-.input-group{
-    margin-bottom:12px;
+.scan-guide{
+    position:absolute;
+    top:35%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:70%;
+    height:55px;
+    border:3px dashed #3de0c2;
+    border-radius:8px;
+    pointer-events:none;
 }
 
-.input-group label{
-    display:block;
-    margin-bottom:5px;
-    font-weight:600;
+.guide-text{
+    text-align:center;
+    margin-top:10px;
     font-size:13px;
+    color:#666;
 }
 
-input,
-select{
-    width:100%;
-    padding:12px;
-    border:1px solid #ccc;
-    border-radius:6px;
-    font-size:16px;
-}
-
-.button-group{
+.button-row{
     display:flex;
     gap:10px;
+    margin-bottom:15px;
     flex-wrap:wrap;
 }
 
 button{
     flex:1;
     min-width:120px;
-    padding:12px;
     border:none;
-    border-radius:6px;
-    cursor:pointer;
+    border-radius:8px;
+    padding:12px;
     color:white;
     font-size:15px;
-    font-weight:600;
+    font-weight:700;
+    cursor:pointer;
 }
 
 .btn-green{
@@ -117,12 +134,43 @@ button{
     background:#656565;
 }
 
+.btn-blue{
+    background:#0077cc;
+}
+
+.input-group{
+    margin-bottom:15px;
+}
+
+.input-group label{
+    display:block;
+    margin-bottom:6px;
+    font-size:14px;
+    font-weight:700;
+}
+
+input,
+select{
+    width:100%;
+    padding:12px;
+    border:2px solid #ddd;
+    border-radius:8px;
+    font-size:18px;
+}
+
+input{
+    text-transform:uppercase;
+    font-weight:700;
+    letter-spacing:1px;
+}
+
 .status{
-    margin-top:10px;
+    background:#f0f0f0;
+    border-radius:8px;
     padding:10px;
-    border-radius:6px;
-    background:#eef;
+    text-align:center;
     font-size:13px;
+    margin-bottom:15px;
 }
 
 .items-section{
@@ -130,40 +178,45 @@ button{
 }
 
 .item{
-    background:white;
-    border:1px solid #ddd;
-    border-radius:6px;
-    padding:12px;
-    margin-bottom:10px;
     display:flex;
     justify-content:space-between;
     align-items:center;
+    background:white;
+    border:1px solid #ddd;
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:10px;
 }
 
 .item-code{
     font-weight:700;
-    font-size:14px;
+    font-size:16px;
 }
 
 .item-type{
     font-size:12px;
     color:#666;
-    margin-top:4px;
+    margin-top:5px;
 }
 
-.item button{
-    flex:none;
+.item-buttons{
+    display:flex;
+    gap:8px;
+}
+
+.item-buttons button{
     padding:8px 10px;
     font-size:12px;
+    min-width:auto;
 }
 
-.empty-message{
+.empty{
     text-align:center;
     color:#999;
     padding:20px;
 }
 
-.action-buttons{
+.footer-buttons{
     display:flex;
     gap:10px;
     margin-top:20px;
@@ -171,21 +224,19 @@ button{
 
 @media print{
 
-    body{
-        background:white;
-        padding:0;
+    .scanner-box,
+    .footer-buttons,
+    .item-buttons,
+    .header p{
+        display:none;
     }
 
-    .scanning-section,
-    .action-buttons,
-    .header button,
-    .item button{
-        display:none;
+    body{
+        background:white;
     }
 
     .container{
         box-shadow:none;
-        max-width:100%;
     }
 
 }
@@ -202,36 +253,61 @@ button{
 
         <h1>📱 Enhed Scanner</h1>
 
-        <p>OCR Tekst Genkendelse</p>
+        <p>OCR Serienummer Scanner</p>
 
     </div>
 
-    <div class="scanning-section">
+    <div class="scanner-box">
 
-        <div id="cameraWrapper">
+        <div class="scanner-title">
 
-            <video id="video" autoplay playsinline></video>
+            📷 OCR Tekst Genkendelse
 
         </div>
 
-        <div class="button-group">
+        <div class="camera-wrapper" id="cameraWrapper">
 
-            <button class="btn-green" onclick="startCamera()">
+            <video id="video" autoplay playsinline></video>
+
+            <div class="scan-guide"></div>
+
+        </div>
+
+        <div class="guide-text">
+
+            Placér serienummeret INDENFOR den grønne ramme
+
+        </div>
+
+        <div class="button-row">
+
+            <button class="btn-green"
+                onclick="startCamera()">
+
                 📷 Start Kamera
+
             </button>
 
-            <button class="btn-red" onclick="stopCamera()">
+            <button class="btn-red"
+                onclick="stopCamera()">
+
                 ⛔ Stop Kamera
+
             </button>
 
-            <button class="btn-gray" onclick="scanText()">
+            <button class="btn-blue"
+                onclick="scanText()">
+
                 🔍 Læs Tekst
+
             </button>
 
         </div>
 
         <div class="status" id="status">
+
             Klar
+
         </div>
 
         <div class="input-group">
@@ -242,6 +318,7 @@ button{
                 type="text"
                 id="codeInput"
                 placeholder="Eks: G90C63NWVT"
+                autocomplete="off"
             >
 
         </div>
@@ -254,48 +331,53 @@ button{
 
                 <option value="">-- vælg type --</option>
 
-                <option value="Tablet">
-                    📱 Tablet
-                </option>
+                <option value="Tablet">📱 Tablet</option>
 
-                <option value="Telefon">
-                    ☎️ Telefon
-                </option>
+                <option value="Telefon">☎️ Telefon</option>
 
-                <option value="PC">
-                    💻 PC
-                </option>
+                <option value="PC">💻 PC</option>
 
             </select>
 
         </div>
 
-        <div class="button-group">
+        <button class="btn-green"
+            onclick="addItem()">
 
-            <button class="btn-green" onclick="addItem()">
-                ✅ Tilføj
-            </button>
+            ✅ Tilføj Enhed
 
-        </div>
+        </button>
 
     </div>
 
     <div class="items-section">
 
-        <h3>📋 Registrerede Enheder</h3>
+        <h2>📋 Registrerede Enheder</h2>
 
         <div id="itemsList"></div>
 
-        <div class="empty-message" id="emptyMessage">
-            Ingen enheder endnu
+        <div class="empty" id="emptyMessage">
+
+            Ingen enheder registreret endnu
+
         </div>
 
     </div>
 
-    <div class="action-buttons">
+    <div class="footer-buttons">
 
-        <button class="btn-green" onclick="savePDF()">
-            📄 Gem som PDF
+        <button class="btn-gray"
+            onclick="saveLocal()">
+
+            💾 Gem
+
+        </button>
+
+        <button class="btn-blue"
+            onclick="window.print()">
+
+            📄 PDF
+
         </button>
 
     </div>
@@ -306,7 +388,25 @@ button{
 
 let stream = null;
 
-let items = [];
+let items = JSON.parse(
+    localStorage.getItem('ocr-items') || '[]'
+);
+
+renderItems();
+
+document
+.getElementById('codeInput')
+.addEventListener('input',function(){
+
+    this.value = this.value.toUpperCase();
+
+});
+
+function setStatus(text){
+
+    document.getElementById('status').innerText = text;
+
+}
 
 async function startCamera(){
 
@@ -326,9 +426,13 @@ async function startCamera(){
 
         video.srcObject = stream;
 
-        document.getElementById('cameraWrapper').style.display = 'block';
+        document
+        .getElementById('cameraWrapper')
+        .style.display = 'flex';
 
-        setStatus('📷 Kamera startet');
+        setStatus(
+            '📷 Kamera klar - placer label i rammen'
+        );
 
     }catch(err){
 
@@ -344,29 +448,24 @@ function stopCamera(){
 
     if(stream){
 
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks()
+        .forEach(track => track.stop());
 
         stream = null;
 
     }
 
-    document.getElementById('cameraWrapper').style.display = 'none';
+    document
+    .getElementById('cameraWrapper')
+    .style.display = 'none';
 
     setStatus('⛔ Kamera stoppet');
-
-}
-
-function setStatus(text){
-
-    document.getElementById('status').innerText = text;
 
 }
 
 async function scanText(){
 
     try{
-
-        const video = document.getElementById('video');
 
         if(!stream){
 
@@ -376,42 +475,128 @@ async function scanText(){
 
         }
 
-        setStatus('🔍 Scanner tekst...');
+        setStatus('🔍 Scanner serienummer...');
+
+        const video = document.getElementById('video');
 
         const canvas = document.createElement('canvas');
 
-        canvas.width = video.videoWidth;
-
-        canvas.height = video.videoHeight;
-
         const ctx = canvas.getContext('2d');
 
-        ctx.drawImage(video,0,0);
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+
+        /*
+            BESKÆR TOP MIDTE
+            hvor serienummeret sidder
+        */
+
+        const cropWidth = vw * 0.7;
+        const cropHeight = vh * 0.18;
+
+        const cropX = (vw - cropWidth) / 2;
+
+        const cropY = vh * 0.22;
+
+        canvas.width = cropWidth;
+
+        canvas.height = cropHeight;
+
+        ctx.drawImage(
+
+            video,
+
+            cropX,
+            cropY,
+            cropWidth,
+            cropHeight,
+
+            0,
+            0,
+            cropWidth,
+            cropHeight
+
+        );
+
+        /*
+            FORBEDR KONTRAST
+        */
+
+        const imageData = ctx.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        const data = imageData.data;
+
+        for(let i=0;i<data.length;i+=4){
+
+            const avg =
+                (data[i] + data[i+1] + data[i+2]) / 3;
+
+            const value = avg > 140 ? 255 : 0;
+
+            data[i] = value;
+            data[i+1] = value;
+            data[i+2] = value;
+
+        }
+
+        ctx.putImageData(imageData,0,0);
+
+        /*
+            OCR
+        */
 
         const result = await Tesseract.recognize(
+
             canvas,
-            'eng'
+
+            'eng',
+
+            {
+                tessedit_char_whitelist:
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+            }
+
         );
 
         let text = result.data.text;
 
+        text = text.toUpperCase();
+
         text = text
-            .replace(/\n/g,' ')
-            .replace(/[^A-Z0-9]/gi,' ')
+            .replace(/[^A-Z0-9]/g,' ')
             .replace(/\s+/g,' ')
             .trim();
 
-        const matches = text.match(/[A-Z0-9]{6,20}/g);
+        console.log(text);
 
-        if(matches && matches.length > 0){
+        /*
+            FIND SERIENUMMER
+        */
 
-            document.getElementById('codeInput').value = matches[0];
+        const matches =
+            text.match(/[A-Z0-9]{6,20}/g);
 
-            setStatus('✅ Serienummer fundet');
+        if(matches && matches.length){
+
+            document
+            .getElementById('codeInput')
+            .value = matches[0];
+
+            setStatus(
+                '✅ Serienummer fundet: ' +
+                matches[0]
+            );
 
         }else{
 
-            setStatus('❌ Ingen kode fundet');
+            setStatus(
+                '❌ Ingen kode fundet'
+            );
 
         }
 
@@ -427,13 +612,19 @@ async function scanText(){
 
 function addItem(){
 
-    const code = document.getElementById('codeInput').value.trim();
+    const code =
+        document.getElementById('codeInput')
+        .value
+        .trim()
+        .toUpperCase();
 
-    const type = document.getElementById('deviceType').value;
+    const type =
+        document.getElementById('deviceType')
+        .value;
 
     if(!code){
 
-        setStatus('❌ Ingen kode');
+        setStatus('❌ Indtast kode');
 
         return;
 
@@ -447,7 +638,9 @@ function addItem(){
 
     }
 
-    const exists = items.some(item => item.code === code);
+    const exists = items.some(
+        item => item.code === code
+    );
 
     if(exists){
 
@@ -460,9 +653,12 @@ function addItem(){
     items.push({
 
         code:code,
-        type:type
+        type:type,
+        date:new Date().toLocaleString('da-DK')
 
     });
+
+    saveLocal();
 
     renderItems();
 
@@ -476,9 +672,11 @@ function addItem(){
 
 function renderItems(){
 
-    const list = document.getElementById('itemsList');
+    const list =
+        document.getElementById('itemsList');
 
-    const empty = document.getElementById('emptyMessage');
+    const empty =
+        document.getElementById('emptyMessage');
 
     if(items.length === 0){
 
@@ -499,21 +697,36 @@ function renderItems(){
             <div>
 
                 <div class="item-code">
+
                     ${item.code}
+
                 </div>
 
                 <div class="item-type">
+
                     ${item.type}
+
                 </div>
 
             </div>
 
-            <button class="btn-red"
-                onclick="deleteItem(${index})">
+            <div class="item-buttons">
 
-                Slet
+                <button class="btn-green"
+                    onclick="editItem(${index})">
 
-            </button>
+                    Rediger
+
+                </button>
+
+                <button class="btn-red"
+                    onclick="deleteItem(${index})">
+
+                    Slet
+
+                </button>
+
+            </div>
 
         </div>
 
@@ -521,23 +734,55 @@ function renderItems(){
 
 }
 
-function deleteItem(index){
+function editItem(index){
 
-    items.splice(index,1);
+    const newCode = prompt(
+
+        'Rediger kode:',
+
+        items[index].code
+
+    );
+
+    if(!newCode) return;
+
+    items[index].code =
+        newCode.toUpperCase();
+
+    saveLocal();
 
     renderItems();
 
-    setStatus('🗑️ Enhed slettet');
+    setStatus('✅ Opdateret');
 
 }
 
-function savePDF(){
+function deleteItem(index){
 
-    window.print();
+    if(!confirm('Slet enhed?')) return;
+
+    items.splice(index,1);
+
+    saveLocal();
+
+    renderItems();
+
+    setStatus('🗑️ Slettet');
 
 }
 
-window.addEventListener('beforeunload', ()=>{
+function saveLocal(){
+
+    localStorage.setItem(
+        'ocr-items',
+        JSON.stringify(items)
+    );
+
+    setStatus('💾 Gemt');
+
+}
+
+window.addEventListener('beforeunload',()=>{
 
     stopCamera();
 
@@ -548,4 +793,3 @@ window.addEventListener('beforeunload', ()=>{
 </body>
 
 </html>
-```
