@@ -1,16 +1,11 @@
 <!DOCTYPE html>
 <html lang="da">
-
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>OCR Enhed Scanner</title>
+<title>OCR Serienummer Scanner</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -23,207 +18,119 @@
 }
 
 body{
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-    background:#f4f4f4;
-    padding:12px;
-    color:#333;
+    background:#f5f5f5;
+    font-family:Arial,sans-serif;
+    padding:15px;
 }
 
 .container{
-    max-width:700px;
-    margin:0 auto;
+    max-width:550px;
+    margin:auto;
     background:white;
-    border-radius:14px;
     padding:15px;
+    border-radius:12px;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 
-.header{
-    background:linear-gradient(135deg,#D20014 0%,#9F000F 100%);
-    color:white;
-    border-radius:10px;
-    padding:20px;
+h1{
     text-align:center;
-    margin-bottom:20px;
-}
-
-.header h1{
-    font-size:28px;
-    margin-bottom:5px;
-}
-
-.scanner-box{
-    background:#eef7f6;
-    border:2px solid #208684;
-    border-radius:10px;
-    padding:15px;
-    margin-bottom:20px;
-}
-
-.camera-wrapper{
-    display:none;
-    justify-content:center;
     margin-bottom:15px;
+    color:#D20014;
+}
+
+.video-wrapper{
+    position:relative;
+    width:100%;
+    overflow:hidden;
+    border-radius:12px;
+    background:black;
 }
 
 video{
     width:100%;
-    max-width:300px;
     height:220px;
-    border-radius:10px;
     object-fit:cover;
-    background:black;
 }
 
-.button-row{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-bottom:15px;
-}
-
-button{
-    flex:1;
-    min-width:120px;
-    border:none;
-    border-radius:8px;
-    padding:12px;
-    color:white;
-    font-size:15px;
-    font-weight:700;
-    cursor:pointer;
-}
-
-.btn-green{
-    background:#208684;
-}
-
-.btn-red{
-    background:#D20014;
-}
-
-.btn-blue{
-    background:#0077cc;
-}
-
-.btn-gray{
-    background:#656565;
-}
-
-.status{
-    background:#fff;
-    border-radius:8px;
-    padding:10px;
-    margin-bottom:15px;
-    text-align:center;
-    font-size:13px;
-    border:1px solid #ddd;
-}
-
-.input-group{
-    margin-bottom:15px;
-}
-
-.input-group label{
-    display:block;
-    margin-bottom:6px;
-    font-weight:700;
-    font-size:14px;
+.guide{
+    position:absolute;
+    width:70%;
+    height:50px;
+    border:3px dashed #00ff88;
+    top:32%;
+    left:50%;
+    transform:translateX(-50%);
+    pointer-events:none;
 }
 
 input,
-select{
+select,
+button{
     width:100%;
-    padding:12px;
-    border:2px solid #ddd;
+    padding:14px;
+    margin-top:10px;
     border-radius:8px;
     font-size:18px;
 }
 
-input{
-    text-transform:uppercase;
-    font-weight:700;
-    letter-spacing:1px;
+input,
+select{
+    border:1px solid #ccc;
 }
 
-.items-section{
-    margin-top:20px;
+input{
+    text-transform:uppercase;
+}
+
+button{
+    border:none;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.start{
+    background:#208684;
+}
+
+.stop{
+    background:#D20014;
+}
+
+.scan{
+    background:#1565C0;
+}
+
+.add{
+    background:#333;
+}
+
+.status{
+    margin-top:10px;
+    padding:12px;
+    border-radius:8px;
+    background:#f0f0f0;
+    font-weight:bold;
+    text-align:center;
 }
 
 .item{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:white;
-    border:1px solid #ddd;
-    border-radius:8px;
+    background:#f7f7f7;
     padding:12px;
-    margin-bottom:10px;
-}
-
-.item-code{
-    font-size:16px;
-    font-weight:700;
-}
-
-.item-type{
-    margin-top:4px;
-    color:#666;
-    font-size:12px;
-}
-
-.item-buttons{
-    display:flex;
-    gap:8px;
-}
-
-.item-buttons button{
-    min-width:auto;
-    padding:8px 10px;
-    font-size:12px;
-}
-
-.empty{
-    text-align:center;
-    color:#999;
-    padding:20px;
-}
-
-.footer-buttons{
-    display:flex;
-    gap:10px;
-    margin-top:20px;
-}
-
-.snapshot-preview{
-    display:none;
+    border-radius:8px;
     margin-top:10px;
-    text-align:center;
 }
 
-.snapshot-preview img{
-    width:100%;
-    max-width:300px;
-    border-radius:10px;
-    border:2px solid #208684;
+.item b{
+    font-size:18px;
 }
 
-@media print{
+.pdf{
+    background:#6A1B9A;
+}
 
-    .scanner-box,
-    .footer-buttons,
-    .item-buttons{
-        display:none;
-    }
-
-    body{
-        background:white;
-    }
-
-    .container{
-        box-shadow:none;
-    }
-
+canvas{
+    display:none;
 }
 
 </style>
@@ -234,140 +141,62 @@ input{
 
 <div class="container">
 
-    <div class="header">
+<h1>📱 Serienummer Scanner</h1>
 
-        <h1>📱 Enhed Scanner</h1>
+<div class="video-wrapper">
 
-        <p>OCR Serienummer Scanner</p>
+    <video id="video" autoplay playsinline></video>
 
-    </div>
+    <div class="guide"></div>
 
-    <div class="scanner-box">
+</div>
 
-        <div class="camera-wrapper" id="cameraWrapper">
+<canvas id="canvas"></canvas>
 
-            <video
-                id="video"
-                autoplay
-                playsinline
-            ></video>
+<button class="start" onclick="startCamera()">
+📷 Start Kamera
+</button>
 
-        </div>
+<button class="stop" onclick="stopCamera()">
+⛔ Stop Kamera
+</button>
 
-        <div class="snapshot-preview" id="snapshotPreview">
+<button class="scan" onclick="scanText()">
+🔍 Scan Serienummer
+</button>
 
-            <img id="snapshotImage">
+<input
+    type="text"
+    id="codeInput"
+    placeholder="Serie nummer"
+    autocomplete="off"
+>
 
-        </div>
+<select id="deviceType">
 
-        <div class="button-row">
+    <option value="">Vælg enhedstype</option>
 
-            <button
-                class="btn-green"
-                onclick="startCamera()"
-            >
-                📷 Start
-            </button>
+    <option value="Tablet">📱 Tablet</option>
 
-            <button
-                class="btn-red"
-                onclick="stopCamera()"
-            >
-                ⛔ Stop
-            </button>
+    <option value="Telefon">☎️ Telefon</option>
 
-            <button
-                class="btn-blue"
-                onclick="captureAndScan()"
-            >
-                🔍 Scan
-            </button>
+    <option value="PC">💻 PC</option>
 
-        </div>
+</select>
 
-        <div class="status" id="status">
+<button class="add" onclick="addItem()">
+✅ Tilføj
+</button>
 
-            Klar
+<button class="pdf" onclick="generatePDF()">
+📄 PDF
+</button>
 
-        </div>
+<div class="status" id="status">
+Klar
+</div>
 
-        <div class="input-group">
-
-            <label>Kode / Serienummer</label>
-
-            <input
-                type="text"
-                id="codeInput"
-                placeholder="Eks: G90C63NWVT"
-                autocomplete="off"
-            >
-
-        </div>
-
-        <div class="input-group">
-
-            <label>Enhedstype</label>
-
-            <select id="deviceType">
-
-                <option value="">-- vælg type --</option>
-
-                <option value="Tablet">
-                    📱 Tablet
-                </option>
-
-                <option value="Telefon">
-                    ☎️ Telefon
-                </option>
-
-                <option value="PC">
-                    💻 PC
-                </option>
-
-            </select>
-
-        </div>
-
-        <button
-            class="btn-green"
-            onclick="addItem()"
-        >
-            ✅ Tilføj Enhed
-        </button>
-
-    </div>
-
-    <div class="items-section">
-
-        <h2>📋 Registrerede Enheder</h2>
-
-        <div id="itemsList"></div>
-
-        <div class="empty" id="emptyMessage">
-
-            Ingen enheder registreret endnu
-
-        </div>
-
-    </div>
-
-    <div class="footer-buttons">
-
-        <button
-            class="btn-gray"
-            onclick="saveLocal()"
-        >
-            💾 Gem
-        </button>
-
-        <button
-            class="btn-blue"
-            onclick="window.print()"
-        >
-            📄 PDF
-        </button>
-
-    </div>
+<div id="list"></div>
 
 </div>
 
@@ -375,25 +204,7 @@ input{
 
 let stream = null;
 
-let items = JSON.parse(
-    localStorage.getItem('ocr-items') || '[]'
-);
-
-renderItems();
-
-document
-.getElementById('codeInput')
-.addEventListener('input',function(){
-
-    this.value = this.value.toUpperCase();
-
-});
-
-function setStatus(text){
-
-    document.getElementById('status').innerText = text;
-
-}
+let items = [];
 
 async function startCamera(){
 
@@ -402,39 +213,68 @@ async function startCamera(){
         stream = await navigator.mediaDevices.getUserMedia({
 
             video:{
+
                 facingMode:{
                     ideal:"environment"
                 },
+
                 width:{
                     ideal:1920
                 },
+
                 height:{
                     ideal:1080
                 }
-            },
 
-            audio:false
+            }
 
         });
 
-        const video =
-            document.getElementById('video');
+        const video = document.getElementById('video');
 
         video.srcObject = stream;
 
-        document
-        .getElementById('cameraWrapper')
-        .style.display = 'flex';
+        const track = stream.getVideoTracks()[0];
 
-        setStatus(
-            '📷 Kamera klar - hold label stille'
-        );
+        const capabilities = track.getCapabilities();
+
+        // Autofokus
+        if(capabilities.focusMode){
+
+            await track.applyConstraints({
+
+                advanced:[
+                    {
+                        focusMode:"continuous"
+                    }
+                ]
+
+            });
+
+        }
+
+        // Zoom
+        if(capabilities.zoom){
+
+            await track.applyConstraints({
+
+                advanced:[
+                    {
+                        zoom:2
+                    }
+                ]
+
+            });
+
+        }
+
+        setStatus("✅ Kamera startet");
 
     }catch(err){
 
         console.log(err);
 
-        setStatus('❌ Kamera fejl');
+        setStatus("❌ Kamera fejl");
 
     }
 
@@ -444,218 +284,125 @@ function stopCamera(){
 
     if(stream){
 
-        stream.getTracks().forEach(track=>{
-
-            track.stop();
-
-        });
-
-        stream = null;
+        stream.getTracks().forEach(track=>track.stop());
 
     }
 
-    document
-    .getElementById('cameraWrapper')
-    .style.display = 'none';
-
-    setStatus('⛔ Kamera stoppet');
+    setStatus("📷 Kamera stoppet");
 
 }
 
-async function captureAndScan(){
+async function scanText(){
 
-    try{
+    setStatus("🔍 Scanner serienummer...");
 
-        if(!stream){
+    const video = document.getElementById('video');
 
-            setStatus('❌ Start kamera først');
+    const canvas = document.getElementById('canvas');
 
-            return;
+    const ctx = canvas.getContext('2d');
 
-        }
+    canvas.width = video.videoWidth;
 
-        setStatus(
-            '📸 Tager billede...'
-        );
+    canvas.height = video.videoHeight;
 
-        const video =
-            document.getElementById('video');
+    ctx.drawImage(video,0,0);
 
-        /*
-            TAG SNAPSHOT
-        */
+    // KUN OMRÅDET MED TEKST
+    const cropX = canvas.width * 0.18;
 
-        const tempCanvas =
-            document.createElement('canvas');
+    const cropY = canvas.height * 0.26;
 
-        tempCanvas.width = video.videoWidth;
+    const cropWidth = canvas.width * 0.64;
 
-        tempCanvas.height = video.videoHeight;
+    const cropHeight = canvas.height * 0.09;
 
-        const tempCtx =
-            tempCanvas.getContext('2d');
+    // FORSTØRRET CANVAS
+    const tempCanvas = document.createElement('canvas');
 
-        tempCtx.drawImage(
-            video,
-            0,
-            0
-        );
+    tempCanvas.width = cropWidth * 5;
 
-        /*
-            CROP TOP MIDTE
-            hvor serienummer er
-        */
+    tempCanvas.height = cropHeight * 5;
 
-        const cropCanvas =
-            document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
 
-        const cropCtx =
-            cropCanvas.getContext('2d');
+    tempCtx.drawImage(
 
-        const vw = tempCanvas.width;
-        const vh = tempCanvas.height;
+        canvas,
 
-        const cropWidth = vw * 0.7;
-        const cropHeight = vh * 0.16;
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
 
-        const cropX = (vw - cropWidth) / 2;
-        const cropY = vh * 0.22;
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
 
-        /*
-            UPSCALE 4X
-        */
+    );
 
-        cropCanvas.width = cropWidth * 4;
-        cropCanvas.height = cropHeight * 4;
+    // SORT/HVID FILTER
+    const img = tempCtx.getImageData(
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
+    );
 
-        cropCtx.drawImage(
+    const data = img.data;
 
-            tempCanvas,
+    for(let i=0;i<data.length;i+=4){
 
-            cropX,
-            cropY,
-            cropWidth,
-            cropHeight,
+        let avg =
+            (data[i] + data[i+1] + data[i+2]) / 3;
 
-            0,
-            0,
-            cropCanvas.width,
-            cropCanvas.height
+        avg = avg > 150 ? 255 : 0;
 
-        );
+        data[i] = avg;
+        data[i+1] = avg;
+        data[i+2] = avg;
 
-        /*
-            SHARPEN + SORT/HVID
-        */
+    }
 
-        const imageData =
-            cropCtx.getImageData(
-                0,
-                0,
-                cropCanvas.width,
-                cropCanvas.height
-            );
+    tempCtx.putImageData(img,0,0);
 
-        const data = imageData.data;
+    const result = await Tesseract.recognize(
 
-        for(let i=0;i<data.length;i+=4){
+        tempCanvas,
 
-            const avg =
-                (data[i] +
-                data[i+1] +
-                data[i+2]) / 3;
+        'eng',
 
-            const value =
-                avg > 150 ? 255 : 0;
+        {
 
-            data[i] = value;
-            data[i+1] = value;
-            data[i+2] = value;
+            tessedit_pageseg_mode: 7,
+
+            tessedit_char_whitelist:
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
         }
 
-        cropCtx.putImageData(
-            imageData,
-            0,
-            0
-        );
+    );
 
-        /*
-            VIS OCR BILLEDE
-        */
+    console.log(result.data.text);
 
-        document
-        .getElementById('snapshotPreview')
-        .style.display = 'block';
+    let found = result.data.text
+        .replace(/[^A-Z0-9]/g,' ')
+        .split(' ')
+        .filter(x => x.length >= 5)
+        .sort((a,b)=>b.length-a.length)[0];
 
-        document
-        .getElementById('snapshotImage')
-        .src =
-            cropCanvas.toDataURL();
+    if(found){
 
-        setStatus(
-            '🔍 Læser serienummer...'
-        );
+        found = found.toUpperCase();
 
-        /*
-            OCR
-        */
+        document.getElementById('codeInput').value = found;
 
-        const result =
-            await Tesseract.recognize(
+        setStatus("✅ Fundet: " + found);
 
-                cropCanvas,
+    }else{
 
-                'eng',
-
-                {
-                    tessedit_char_whitelist:
-                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-                }
-
-            );
-
-        let text =
-            result.data.text.toUpperCase();
-
-        text = text
-            .replace(/[^A-Z0-9]/g,' ')
-            .replace(/\s+/g,' ')
-            .trim();
-
-        console.log(text);
-
-        /*
-            FIND SERIENUMMER
-        */
-
-        const matches =
-            text.match(/[A-Z0-9]{6,20}/g);
-
-        if(matches && matches.length){
-
-            document
-            .getElementById('codeInput')
-            .value = matches[0];
-
-            setStatus(
-                '✅ Fundet: ' +
-                matches[0]
-            );
-
-        }else{
-
-            setStatus(
-                '❌ Ingen kode fundet'
-            );
-
-        }
-
-    }catch(err){
-
-        console.log(err);
-
-        setStatus('❌ OCR fejl');
+        setStatus("❌ Ingen kode fundet");
 
     }
 
@@ -670,126 +417,69 @@ function addItem(){
         .toUpperCase();
 
     const type =
-        document.getElementById('deviceType')
-        .value;
+        document.getElementById('deviceType').value;
 
     if(!code){
 
-        setStatus('❌ Indtast kode');
+        setStatus("❌ Mangler serienummer");
 
         return;
-
     }
 
     if(!type){
 
-        setStatus('❌ Vælg type');
+        setStatus("❌ Vælg enhedstype");
 
         return;
-
     }
 
-    const exists =
-        items.some(
-            item => item.code === code
-        );
+    const exists = items.some(
+        item => item.code === code
+    );
 
     if(exists){
 
-        setStatus(
-            '⚠️ Serienummer findes allerede'
-        );
+        setStatus("⚠️ Serienummer findes allerede");
 
         return;
-
     }
 
     items.push({
 
-        code:code,
-        type:type,
-        date:new Date()
-            .toLocaleString('da-DK')
+        code,
+        type
 
     });
 
-    saveLocal();
+    renderList();
 
-    renderItems();
+    document.getElementById('codeInput').value = '';
 
-    document
-    .getElementById('codeInput')
-    .value = '';
+    document.getElementById('deviceType').value = '';
 
-    document
-    .getElementById('deviceType')
-    .value = '';
-
-    setStatus('✅ Enhed tilføjet');
+    setStatus("✅ Tilføjet");
 
 }
 
-function renderItems(){
+function renderList(){
 
-    const list =
-        document.getElementById('itemsList');
-
-    const empty =
-        document.getElementById('emptyMessage');
+    const list = document.getElementById('list');
 
     if(items.length === 0){
 
         list.innerHTML = '';
 
-        empty.style.display = 'block';
-
         return;
 
     }
 
-    empty.style.display = 'none';
-
-    list.innerHTML = items.map((item,index)=>`
+    list.innerHTML = items.map(item => `
 
         <div class="item">
 
-            <div>
-
-                <div class="item-code">
-
-                    ${item.code}
-
-                </div>
-
-                <div class="item-type">
-
-                    ${item.type}
-
-                </div>
-
-            </div>
-
-            <div class="item-buttons">
-
-                <button
-                    class="btn-green"
-                    onclick="editItem(${index})"
-                >
-
-                    Rediger
-
-                </button>
-
-                <button
-                    class="btn-red"
-                    onclick="deleteItem(${index})"
-                >
-
-                    Slet
-
-                </button>
-
-            </div>
+            <b>${item.code}</b>
+            <br>
+            ${item.type}
 
         </div>
 
@@ -797,50 +487,89 @@ function renderItems(){
 
 }
 
-function editItem(index){
+function generatePDF(){
 
-    const newCode = prompt(
+    if(items.length === 0){
 
-        'Rediger kode:',
+        setStatus("❌ Ingen enheder");
 
-        items[index].code
+        return;
 
-    );
+    }
 
-    if(!newCode) return;
+    let html = `
 
-    items[index].code =
-        newCode.toUpperCase();
+    <html>
 
-    saveLocal();
+    <head>
 
-    renderItems();
+    <title>PDF</title>
+
+    <style>
+
+    body{
+        font-family:Arial;
+        padding:20px;
+    }
+
+    h1{
+        color:#D20014;
+    }
+
+    .item{
+        border:1px solid #ccc;
+        padding:10px;
+        margin-bottom:10px;
+        border-radius:8px;
+    }
+
+    </style>
+
+    </head>
+
+    <body>
+
+    <h1>Enhedsliste</h1>
+
+    `;
+
+    items.forEach(item => {
+
+        html += `
+
+        <div class="item">
+
+            <b>${item.code}</b>
+            <br>
+            ${item.type}
+
+        </div>
+
+        `;
+
+    });
+
+    html += `
+
+    </body>
+
+    </html>
+
+    `;
+
+    const win = window.open('');
+
+    win.document.write(html);
+
+    win.document.close();
+
+    win.print();
 
 }
 
-function deleteItem(index){
+function setStatus(text){
 
-    if(!confirm('Slet enhed?')) return;
-
-    items.splice(index,1);
-
-    saveLocal();
-
-    renderItems();
-
-}
-
-function saveLocal(){
-
-    localStorage.setItem(
-
-        'ocr-items',
-
-        JSON.stringify(items)
-
-    );
-
-    setStatus('💾 Gemt');
+    document.getElementById('status').innerText = text;
 
 }
 
@@ -853,5 +582,4 @@ window.addEventListener('beforeunload',()=>{
 </script>
 
 </body>
-
 </html>
