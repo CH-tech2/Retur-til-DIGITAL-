@@ -66,6 +66,7 @@ h1{
     overflow:hidden;
     border-radius:10px;
     background:black;
+    margin-top:10px;
 }
 
 video{
@@ -127,6 +128,10 @@ button{
 
 .pdf{
     background:#6A1B9A;
+}
+
+.delete-list{
+    background:#D20014;
 }
 
 .back{
@@ -255,6 +260,10 @@ canvas{
 
     <button class="pdf" onclick="generatePDF()">
         📄 PDF
+    </button>
+
+    <button class="delete-list" onclick="deleteList()">
+        🗑️ Slet Liste
     </button>
 
     <div class="status" id="status">
@@ -741,6 +750,40 @@ function deleteItem(index){
         renderItems();
 
     }
+
+}
+
+function deleteList(){
+
+    const list = getCurrentList();
+
+    if(!list) return;
+
+    const confirmed = confirm(
+        `Slet listen "${list.title}"?`
+    );
+
+    if(!confirmed) return;
+
+    lists = lists.filter(
+        l => l.id !== currentListId
+    );
+
+    saveLists();
+
+    stopCamera();
+
+    currentListId = null;
+
+    document.getElementById('mainContent')
+        .style.display = 'none';
+
+    document.getElementById('listSelector')
+        .style.display = 'block';
+
+    renderListButtons();
+
+    setStatus("🗑️ Liste slettet");
 
 }
 
