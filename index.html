@@ -4,7 +4,11 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>OCR Enhed Scanner</title>
 
@@ -21,7 +25,7 @@
 body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
     background:#f4f4f4;
-    padding:10px;
+    padding:12px;
     color:#333;
 }
 
@@ -29,7 +33,7 @@ body{
     max-width:700px;
     margin:0 auto;
     background:white;
-    border-radius:12px;
+    border-radius:14px;
     padding:15px;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
@@ -37,8 +41,8 @@ body{
 .header{
     background:linear-gradient(135deg,#D20014 0%,#9F000F 100%);
     color:white;
-    padding:20px;
     border-radius:10px;
+    padding:20px;
     text-align:center;
     margin-bottom:20px;
 }
@@ -46,10 +50,6 @@ body{
 .header h1{
     font-size:28px;
     margin-bottom:5px;
-}
-
-.header p{
-    opacity:0.9;
 }
 
 .scanner-box{
@@ -60,16 +60,7 @@ body{
     margin-bottom:20px;
 }
 
-.scanner-title{
-    text-align:center;
-    margin-bottom:15px;
-    color:#208684;
-    font-weight:700;
-    font-size:20px;
-}
-
 .camera-wrapper{
-    position:relative;
     display:none;
     justify-content:center;
     margin-bottom:15px;
@@ -77,37 +68,18 @@ body{
 
 video{
     width:100%;
-    max-width:320px;
+    max-width:300px;
     height:220px;
-    object-fit:cover;
     border-radius:10px;
+    object-fit:cover;
     background:black;
-}
-
-.scan-guide{
-    position:absolute;
-    top:35%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    width:70%;
-    height:55px;
-    border:3px dashed #3de0c2;
-    border-radius:8px;
-    pointer-events:none;
-}
-
-.guide-text{
-    text-align:center;
-    margin-top:10px;
-    font-size:13px;
-    color:#666;
 }
 
 .button-row{
     display:flex;
     gap:10px;
-    margin-bottom:15px;
     flex-wrap:wrap;
+    margin-bottom:15px;
 }
 
 button{
@@ -130,12 +102,22 @@ button{
     background:#D20014;
 }
 
+.btn-blue{
+    background:#0077cc;
+}
+
 .btn-gray{
     background:#656565;
 }
 
-.btn-blue{
-    background:#0077cc;
+.status{
+    background:#fff;
+    border-radius:8px;
+    padding:10px;
+    margin-bottom:15px;
+    text-align:center;
+    font-size:13px;
+    border:1px solid #ddd;
 }
 
 .input-group{
@@ -145,8 +127,8 @@ button{
 .input-group label{
     display:block;
     margin-bottom:6px;
-    font-size:14px;
     font-weight:700;
+    font-size:14px;
 }
 
 input,
@@ -162,15 +144,6 @@ input{
     text-transform:uppercase;
     font-weight:700;
     letter-spacing:1px;
-}
-
-.status{
-    background:#f0f0f0;
-    border-radius:8px;
-    padding:10px;
-    text-align:center;
-    font-size:13px;
-    margin-bottom:15px;
 }
 
 .items-section{
@@ -189,14 +162,14 @@ input{
 }
 
 .item-code{
-    font-weight:700;
     font-size:16px;
+    font-weight:700;
 }
 
 .item-type{
-    font-size:12px;
+    margin-top:4px;
     color:#666;
-    margin-top:5px;
+    font-size:12px;
 }
 
 .item-buttons{
@@ -205,9 +178,9 @@ input{
 }
 
 .item-buttons button{
+    min-width:auto;
     padding:8px 10px;
     font-size:12px;
-    min-width:auto;
 }
 
 .empty{
@@ -222,12 +195,24 @@ input{
     margin-top:20px;
 }
 
+.snapshot-preview{
+    display:none;
+    margin-top:10px;
+    text-align:center;
+}
+
+.snapshot-preview img{
+    width:100%;
+    max-width:300px;
+    border-radius:10px;
+    border:2px solid #208684;
+}
+
 @media print{
 
     .scanner-box,
     .footer-buttons,
-    .item-buttons,
-    .header p{
+    .item-buttons{
         display:none;
     }
 
@@ -259,47 +244,43 @@ input{
 
     <div class="scanner-box">
 
-        <div class="scanner-title">
-
-            📷 OCR Tekst Genkendelse
-
-        </div>
-
         <div class="camera-wrapper" id="cameraWrapper">
 
-            <video id="video" autoplay playsinline></video>
-
-            <div class="scan-guide"></div>
+            <video
+                id="video"
+                autoplay
+                playsinline
+            ></video>
 
         </div>
 
-        <div class="guide-text">
+        <div class="snapshot-preview" id="snapshotPreview">
 
-            Placér serienummeret INDENFOR den grønne ramme
+            <img id="snapshotImage">
 
         </div>
 
         <div class="button-row">
 
-            <button class="btn-green"
-                onclick="startCamera()">
-
-                📷 Start Kamera
-
+            <button
+                class="btn-green"
+                onclick="startCamera()"
+            >
+                📷 Start
             </button>
 
-            <button class="btn-red"
-                onclick="stopCamera()">
-
-                ⛔ Stop Kamera
-
+            <button
+                class="btn-red"
+                onclick="stopCamera()"
+            >
+                ⛔ Stop
             </button>
 
-            <button class="btn-blue"
-                onclick="scanText()">
-
-                🔍 Læs Tekst
-
+            <button
+                class="btn-blue"
+                onclick="captureAndScan()"
+            >
+                🔍 Scan
             </button>
 
         </div>
@@ -331,21 +312,27 @@ input{
 
                 <option value="">-- vælg type --</option>
 
-                <option value="Tablet">📱 Tablet</option>
+                <option value="Tablet">
+                    📱 Tablet
+                </option>
 
-                <option value="Telefon">☎️ Telefon</option>
+                <option value="Telefon">
+                    ☎️ Telefon
+                </option>
 
-                <option value="PC">💻 PC</option>
+                <option value="PC">
+                    💻 PC
+                </option>
 
             </select>
 
         </div>
 
-        <button class="btn-green"
-            onclick="addItem()">
-
+        <button
+            class="btn-green"
+            onclick="addItem()"
+        >
             ✅ Tilføj Enhed
-
         </button>
 
     </div>
@@ -366,18 +353,18 @@ input{
 
     <div class="footer-buttons">
 
-        <button class="btn-gray"
-            onclick="saveLocal()">
-
+        <button
+            class="btn-gray"
+            onclick="saveLocal()"
+        >
             💾 Gem
-
         </button>
 
-        <button class="btn-blue"
-            onclick="window.print()">
-
+        <button
+            class="btn-blue"
+            onclick="window.print()"
+        >
             📄 PDF
-
         </button>
 
     </div>
@@ -415,14 +402,23 @@ async function startCamera(){
         stream = await navigator.mediaDevices.getUserMedia({
 
             video:{
-                facingMode:"environment"
+                facingMode:{
+                    ideal:"environment"
+                },
+                width:{
+                    ideal:1920
+                },
+                height:{
+                    ideal:1080
+                }
             },
 
             audio:false
 
         });
 
-        const video = document.getElementById('video');
+        const video =
+            document.getElementById('video');
 
         video.srcObject = stream;
 
@@ -431,7 +427,7 @@ async function startCamera(){
         .style.display = 'flex';
 
         setStatus(
-            '📷 Kamera klar - placer label i rammen'
+            '📷 Kamera klar - hold label stille'
         );
 
     }catch(err){
@@ -448,8 +444,11 @@ function stopCamera(){
 
     if(stream){
 
-        stream.getTracks()
-        .forEach(track => track.stop());
+        stream.getTracks().forEach(track=>{
+
+            track.stop();
+
+        });
 
         stream = null;
 
@@ -463,7 +462,7 @@ function stopCamera(){
 
 }
 
-async function scanText(){
+async function captureAndScan(){
 
     try{
 
@@ -475,36 +474,63 @@ async function scanText(){
 
         }
 
-        setStatus('🔍 Scanner serienummer...');
+        setStatus(
+            '📸 Tager billede...'
+        );
 
-        const video = document.getElementById('video');
-
-        const canvas = document.createElement('canvas');
-
-        const ctx = canvas.getContext('2d');
-
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
+        const video =
+            document.getElementById('video');
 
         /*
-            BESKÆR TOP MIDTE
-            hvor serienummeret sidder
+            TAG SNAPSHOT
         */
 
+        const tempCanvas =
+            document.createElement('canvas');
+
+        tempCanvas.width = video.videoWidth;
+
+        tempCanvas.height = video.videoHeight;
+
+        const tempCtx =
+            tempCanvas.getContext('2d');
+
+        tempCtx.drawImage(
+            video,
+            0,
+            0
+        );
+
+        /*
+            CROP TOP MIDTE
+            hvor serienummer er
+        */
+
+        const cropCanvas =
+            document.createElement('canvas');
+
+        const cropCtx =
+            cropCanvas.getContext('2d');
+
+        const vw = tempCanvas.width;
+        const vh = tempCanvas.height;
+
         const cropWidth = vw * 0.7;
-        const cropHeight = vh * 0.18;
+        const cropHeight = vh * 0.16;
 
         const cropX = (vw - cropWidth) / 2;
-
         const cropY = vh * 0.22;
 
-        canvas.width = cropWidth;
+        /*
+            UPSCALE 4X
+        */
 
-        canvas.height = cropHeight;
+        cropCanvas.width = cropWidth * 4;
+        cropCanvas.height = cropHeight * 4;
 
-        ctx.drawImage(
+        cropCtx.drawImage(
 
-            video,
+            tempCanvas,
 
             cropX,
             cropY,
@@ -513,30 +539,34 @@ async function scanText(){
 
             0,
             0,
-            cropWidth,
-            cropHeight
+            cropCanvas.width,
+            cropCanvas.height
 
         );
 
         /*
-            FORBEDR KONTRAST
+            SHARPEN + SORT/HVID
         */
 
-        const imageData = ctx.getImageData(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
+        const imageData =
+            cropCtx.getImageData(
+                0,
+                0,
+                cropCanvas.width,
+                cropCanvas.height
+            );
 
         const data = imageData.data;
 
         for(let i=0;i<data.length;i+=4){
 
             const avg =
-                (data[i] + data[i+1] + data[i+2]) / 3;
+                (data[i] +
+                data[i+1] +
+                data[i+2]) / 3;
 
-            const value = avg > 140 ? 255 : 0;
+            const value =
+                avg > 150 ? 255 : 0;
 
             data[i] = value;
             data[i+1] = value;
@@ -544,28 +574,49 @@ async function scanText(){
 
         }
 
-        ctx.putImageData(imageData,0,0);
+        cropCtx.putImageData(
+            imageData,
+            0,
+            0
+        );
+
+        /*
+            VIS OCR BILLEDE
+        */
+
+        document
+        .getElementById('snapshotPreview')
+        .style.display = 'block';
+
+        document
+        .getElementById('snapshotImage')
+        .src =
+            cropCanvas.toDataURL();
+
+        setStatus(
+            '🔍 Læser serienummer...'
+        );
 
         /*
             OCR
         */
 
-        const result = await Tesseract.recognize(
+        const result =
+            await Tesseract.recognize(
 
-            canvas,
+                cropCanvas,
 
-            'eng',
+                'eng',
 
-            {
-                tessedit_char_whitelist:
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-            }
+                {
+                    tessedit_char_whitelist:
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+                }
 
-        );
+            );
 
-        let text = result.data.text;
-
-        text = text.toUpperCase();
+        let text =
+            result.data.text.toUpperCase();
 
         text = text
             .replace(/[^A-Z0-9]/g,' ')
@@ -588,7 +639,7 @@ async function scanText(){
             .value = matches[0];
 
             setStatus(
-                '✅ Serienummer fundet: ' +
+                '✅ Fundet: ' +
                 matches[0]
             );
 
@@ -638,13 +689,16 @@ function addItem(){
 
     }
 
-    const exists = items.some(
-        item => item.code === code
-    );
+    const exists =
+        items.some(
+            item => item.code === code
+        );
 
     if(exists){
 
-        setStatus('⚠️ Koden findes allerede');
+        setStatus(
+            '⚠️ Serienummer findes allerede'
+        );
 
         return;
 
@@ -654,7 +708,8 @@ function addItem(){
 
         code:code,
         type:type,
-        date:new Date().toLocaleString('da-DK')
+        date:new Date()
+            .toLocaleString('da-DK')
 
     });
 
@@ -662,9 +717,13 @@ function addItem(){
 
     renderItems();
 
-    document.getElementById('codeInput').value = '';
+    document
+    .getElementById('codeInput')
+    .value = '';
 
-    document.getElementById('deviceType').value = '';
+    document
+    .getElementById('deviceType')
+    .value = '';
 
     setStatus('✅ Enhed tilføjet');
 
@@ -712,15 +771,19 @@ function renderItems(){
 
             <div class="item-buttons">
 
-                <button class="btn-green"
-                    onclick="editItem(${index})">
+                <button
+                    class="btn-green"
+                    onclick="editItem(${index})"
+                >
 
                     Rediger
 
                 </button>
 
-                <button class="btn-red"
-                    onclick="deleteItem(${index})">
+                <button
+                    class="btn-red"
+                    onclick="deleteItem(${index})"
+                >
 
                     Slet
 
@@ -753,8 +816,6 @@ function editItem(index){
 
     renderItems();
 
-    setStatus('✅ Opdateret');
-
 }
 
 function deleteItem(index){
@@ -767,15 +828,16 @@ function deleteItem(index){
 
     renderItems();
 
-    setStatus('🗑️ Slettet');
-
 }
 
 function saveLocal(){
 
     localStorage.setItem(
+
         'ocr-items',
+
         JSON.stringify(items)
+
     );
 
     setStatus('💾 Gemt');
