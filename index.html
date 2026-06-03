@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>OCR Serienummer Scanner</title>
+<title>Enhed Scanner</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -20,11 +20,11 @@
 body{
     background:#f5f5f5;
     font-family:Arial,sans-serif;
-    padding:15px;
+    padding:10px;
 }
 
 .container{
-    max-width:550px;
+    max-width:600px;
     margin:auto;
     background:white;
     padding:15px;
@@ -34,15 +34,37 @@ body{
 
 h1{
     text-align:center;
-    margin-bottom:15px;
     color:#D20014;
+    margin-bottom:15px;
+}
+
+.list-selector{
+    margin-bottom:20px;
+}
+
+.list-btn{
+    width:100%;
+    padding:14px;
+    margin-top:10px;
+    border:none;
+    border-radius:8px;
+    background:#208684;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    text-align:left;
+}
+
+.new-list-btn{
+    background:#D20014;
 }
 
 .video-wrapper{
     position:relative;
     width:100%;
     overflow:hidden;
-    border-radius:12px;
+    border-radius:10px;
     background:black;
 }
 
@@ -60,7 +82,6 @@ video{
     top:32%;
     left:50%;
     transform:translateX(-50%);
-    pointer-events:none;
 }
 
 input,
@@ -71,11 +92,6 @@ button{
     margin-top:10px;
     border-radius:8px;
     font-size:18px;
-}
-
-input,
-select{
-    border:1px solid #ccc;
 }
 
 input{
@@ -105,13 +121,25 @@ button{
     background:#333;
 }
 
+.save{
+    background:#208684;
+}
+
+.pdf{
+    background:#6A1B9A;
+}
+
+.back{
+    background:#777;
+}
+
 .status{
     margin-top:10px;
     padding:12px;
     border-radius:8px;
-    background:#f0f0f0;
-    font-weight:bold;
+    background:#eee;
     text-align:center;
+    font-weight:bold;
 }
 
 .item{
@@ -121,12 +149,27 @@ button{
     margin-top:10px;
 }
 
-.item b{
-    font-size:18px;
+.item-actions{
+    margin-top:10px;
+    display:flex;
+    gap:10px;
 }
 
-.pdf{
-    background:#6A1B9A;
+.small-btn{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    color:white;
+    cursor:pointer;
+}
+
+.edit{
+    background:#208684;
+}
+
+.delete{
+    background:#D20014;
 }
 
 canvas{
@@ -141,62 +184,86 @@ canvas{
 
 <div class="container">
 
-<h1>📱 Serienummer Scanner</h1>
+<h1>📱 Enhed Scanner</h1>
 
-<div class="video-wrapper">
+<div id="listSelector" class="list-selector">
 
-    <video id="video" autoplay playsinline></video>
+    <button class="list-btn new-list-btn" onclick="createNewList()">
+        ➕ Ny Liste
+    </button>
 
-    <div class="guide"></div>
+    <div id="listButtons"></div>
 
 </div>
 
-<canvas id="canvas"></canvas>
+<div id="mainContent" style="display:none;">
 
-<button class="start" onclick="startCamera()">
-📷 Start Kamera
-</button>
+    <button class="back" onclick="goBack()">
+        ← Tilbage
+    </button>
 
-<button class="stop" onclick="stopCamera()">
-⛔ Stop Kamera
-</button>
+    <h2 id="listTitle" style="margin-top:15px;"></h2>
 
-<button class="scan" onclick="scanText()">
-🔍 Scan Serienummer
-</button>
+    <div class="video-wrapper">
 
-<input
-    type="text"
-    id="codeInput"
-    placeholder="Serie nummer"
-    autocomplete="off"
->
+        <video id="video" autoplay playsinline></video>
 
-<select id="deviceType">
+        <div class="guide"></div>
 
-    <option value="">Vælg enhedstype</option>
+    </div>
 
-    <option value="Tablet">📱 Tablet</option>
+    <canvas id="canvas"></canvas>
 
-    <option value="Telefon">☎️ Telefon</option>
+    <button class="start" onclick="startCamera()">
+        📷 Start Kamera
+    </button>
 
-    <option value="PC">💻 PC</option>
+    <button class="stop" onclick="stopCamera()">
+        ⛔ Stop Kamera
+    </button>
 
-</select>
+    <button class="scan" onclick="scanText()">
+        🔍 Scan Serienummer
+    </button>
 
-<button class="add" onclick="addItem()">
-✅ Tilføj
-</button>
+    <input
+        type="text"
+        id="codeInput"
+        placeholder="Serie nummer"
+        autocomplete="off"
+    >
 
-<button class="pdf" onclick="generatePDF()">
-📄 PDF
-</button>
+    <select id="deviceType">
 
-<div class="status" id="status">
-Klar
+        <option value="">Vælg enhedstype</option>
+
+        <option value="Tablet">📱 Tablet</option>
+
+        <option value="Telefon">☎️ Telefon</option>
+
+        <option value="PC">💻 PC</option>
+
+    </select>
+
+    <button class="add" onclick="addItem()">
+        ✅ Tilføj
+    </button>
+
+    <button class="save" onclick="saveLists()">
+        💾 Gem Liste
+    </button>
+
+    <button class="pdf" onclick="generatePDF()">
+        📄 PDF
+    </button>
+
+    <div class="status" id="status">
+        Klar
+    </div>
+
+    <div id="items"></div>
+
 </div>
-
-<div id="list"></div>
 
 </div>
 
@@ -204,7 +271,136 @@ Klar
 
 let stream = null;
 
-let items = [];
+let lists = [];
+
+let currentListId = null;
+
+function init(){
+
+    loadLists();
+
+    renderListButtons();
+
+}
+
+function loadLists(){
+
+    const saved = localStorage.getItem('scanner_lists');
+
+    lists = saved ? JSON.parse(saved) : [];
+
+}
+
+function saveLists(){
+
+    localStorage.setItem(
+        'scanner_lists',
+        JSON.stringify(lists)
+    );
+
+    setStatus("💾 Liste gemt");
+
+}
+
+function createNewList(){
+
+    const title = prompt("Navn på liste:");
+
+    if(!title) return;
+
+    const list = {
+
+        id:Date.now(),
+
+        title:title,
+
+        items:[]
+
+    };
+
+    lists.unshift(list);
+
+    saveLists();
+
+    renderListButtons();
+
+    openList(list.id);
+
+}
+
+function renderListButtons(){
+
+    const div = document.getElementById('listButtons');
+
+    if(lists.length === 0){
+
+        div.innerHTML = `
+            <div class="status">
+                Ingen lister endnu
+            </div>
+        `;
+
+        return;
+
+    }
+
+    div.innerHTML = lists.map(list=>`
+
+        <button
+            class="list-btn"
+            onclick="openList(${list.id})"
+        >
+
+            ${list.title}
+            <br>
+            <small>${list.items.length} enheder</small>
+
+        </button>
+
+    `).join('');
+
+}
+
+function openList(id){
+
+    currentListId = id;
+
+    const list = getCurrentList();
+
+    document.getElementById('listSelector')
+        .style.display = 'none';
+
+    document.getElementById('mainContent')
+        .style.display = 'block';
+
+    document.getElementById('listTitle')
+        .innerText = list.title;
+
+    renderItems();
+
+}
+
+function goBack(){
+
+    stopCamera();
+
+    currentListId = null;
+
+    document.getElementById('listSelector')
+        .style.display = 'block';
+
+    document.getElementById('mainContent')
+        .style.display = 'none';
+
+    renderListButtons();
+
+}
+
+function getCurrentList(){
+
+    return lists.find(l => l.id === currentListId);
+
+}
 
 async function startCamera(){
 
@@ -238,7 +434,6 @@ async function startCamera(){
 
         const capabilities = track.getCapabilities();
 
-        // Autofokus
         if(capabilities.focusMode){
 
             await track.applyConstraints({
@@ -253,7 +448,6 @@ async function startCamera(){
 
         }
 
-        // Zoom
         if(capabilities.zoom){
 
             await track.applyConstraints({
@@ -294,7 +488,7 @@ function stopCamera(){
 
 async function scanText(){
 
-    setStatus("🔍 Scanner serienummer...");
+    setStatus("🔍 Scanner...");
 
     const video = document.getElementById('video');
 
@@ -308,7 +502,6 @@ async function scanText(){
 
     ctx.drawImage(video,0,0);
 
-    // KUN OMRÅDET MED TEKST
     const cropX = canvas.width * 0.18;
 
     const cropY = canvas.height * 0.26;
@@ -317,7 +510,6 @@ async function scanText(){
 
     const cropHeight = canvas.height * 0.09;
 
-    // FORSTØRRET CANVAS
     const tempCanvas = document.createElement('canvas');
 
     tempCanvas.width = cropWidth * 5;
@@ -342,7 +534,6 @@ async function scanText(){
 
     );
 
-    // SORT/HVID FILTER
     const img = tempCtx.getImageData(
         0,
         0,
@@ -355,7 +546,7 @@ async function scanText(){
     for(let i=0;i<data.length;i+=4){
 
         let avg =
-            (data[i] + data[i+1] + data[i+2]) / 3;
+            (data[i]+data[i+1]+data[i+2])/3;
 
         avg = avg > 150 ? 255 : 0;
 
@@ -375,7 +566,7 @@ async function scanText(){
 
         {
 
-            tessedit_pageseg_mode: 7,
+            tessedit_pageseg_mode:7,
 
             tessedit_char_whitelist:
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -383,8 +574,6 @@ async function scanText(){
         }
 
     );
-
-    console.log(result.data.text);
 
     let found = result.data.text
         .replace(/[^A-Z0-9]/g,' ')
@@ -424,16 +613,20 @@ function addItem(){
         setStatus("❌ Mangler serienummer");
 
         return;
+
     }
 
     if(!type){
 
-        setStatus("❌ Vælg enhedstype");
+        setStatus("❌ Vælg type");
 
         return;
+
     }
 
-    const exists = items.some(
+    const list = getCurrentList();
+
+    const exists = list.items.some(
         item => item.code === code
     );
 
@@ -442,16 +635,19 @@ function addItem(){
         setStatus("⚠️ Serienummer findes allerede");
 
         return;
+
     }
 
-    items.push({
+    list.items.push({
 
         code,
         type
 
     });
 
-    renderList();
+    saveLists();
+
+    renderItems();
 
     document.getElementById('codeInput').value = '';
 
@@ -461,19 +657,25 @@ function addItem(){
 
 }
 
-function renderList(){
+function renderItems(){
 
-    const list = document.getElementById('list');
+    const list = getCurrentList();
 
-    if(items.length === 0){
+    const div = document.getElementById('items');
 
-        list.innerHTML = '';
+    if(!list || list.items.length === 0){
+
+        div.innerHTML = `
+            <div class="status">
+                Ingen enheder endnu
+            </div>
+        `;
 
         return;
 
     }
 
-    list.innerHTML = items.map(item => `
+    div.innerHTML = list.items.map((item,index)=>`
 
         <div class="item">
 
@@ -481,15 +683,72 @@ function renderList(){
             <br>
             ${item.type}
 
+            <div class="item-actions">
+
+                <button
+                    class="small-btn edit"
+                    onclick="editItem(${index})"
+                >
+                    Rediger
+                </button>
+
+                <button
+                    class="small-btn delete"
+                    onclick="deleteItem(${index})"
+                >
+                    Slet
+                </button>
+
+            </div>
+
         </div>
 
     `).join('');
 
 }
 
+function editItem(index){
+
+    const list = getCurrentList();
+
+    const item = list.items[index];
+
+    const newCode = prompt(
+        "Rediger serienummer",
+        item.code
+    );
+
+    if(!newCode) return;
+
+    item.code = newCode.toUpperCase();
+
+    saveLists();
+
+    renderItems();
+
+}
+
+function deleteItem(index){
+
+    const list = getCurrentList();
+
+    if(confirm("Slet enhed?")){
+
+        list.items.splice(index,1);
+
+        saveLists();
+
+        renderItems();
+
+    }
+
+}
+
 function generatePDF(){
 
-    if(items.length === 0){
+    const list = getCurrentList();
+
+    if(!list || list.items.length === 0){
 
         setStatus("❌ Ingen enheder");
 
@@ -503,7 +762,7 @@ function generatePDF(){
 
     <head>
 
-    <title>PDF</title>
+    <title>${list.title}</title>
 
     <style>
 
@@ -518,7 +777,7 @@ function generatePDF(){
 
     .item{
         border:1px solid #ccc;
-        padding:10px;
+        padding:12px;
         margin-bottom:10px;
         border-radius:8px;
     }
@@ -529,11 +788,11 @@ function generatePDF(){
 
     <body>
 
-    <h1>Enhedsliste</h1>
+    <h1>${list.title}</h1>
 
     `;
 
-    items.forEach(item => {
+    list.items.forEach(item=>{
 
         html += `
 
@@ -549,13 +808,7 @@ function generatePDF(){
 
     });
 
-    html += `
-
-    </body>
-
-    </html>
-
-    `;
+    html += `</body></html>`;
 
     const win = window.open('');
 
@@ -572,6 +825,8 @@ function setStatus(text){
     document.getElementById('status').innerText = text;
 
 }
+
+window.addEventListener('load',init);
 
 window.addEventListener('beforeunload',()=>{
 
