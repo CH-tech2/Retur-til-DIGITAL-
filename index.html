@@ -1,883 +1,361 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Enhed Scanner</title>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-<style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    background:#f5f5f5;
-    font-family:Arial,sans-serif;
-    padding:10px;
-}
-
-.container{
-    max-width:600px;
-    margin:auto;
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-}
-
-h1{
-    text-align:center;
-    color:#D20014;
-    margin-bottom:15px;
-}
-
-.list-selector{
-    margin-bottom:20px;
-}
-
-.list-btn{
-    width:100%;
-    padding:14px;
-    margin-top:10px;
-    border:none;
-    border-radius:8px;
-    background:#208684;
-    color:white;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-    text-align:left;
-}
-
-.new-list-btn{
-    background:#D20014;
-}
-
-.video-wrapper{
-    position:relative;
-    width:100%;
-    overflow:hidden;
-    border-radius:10px;
-    background:black;
-    margin-top:10px;
-}
-
-video{
-    width:100%;
-    height:220px;
-    object-fit:cover;
-}
-
-.guide{
-    position:absolute;
-    width:70%;
-    height:50px;
-    border:3px dashed #00ff88;
-    top:32%;
-    left:50%;
-    transform:translateX(-50%);
-}
-
-input,
-select,
-button{
-    width:100%;
-    padding:14px;
-    margin-top:10px;
-    border-radius:8px;
-    font-size:18px;
-}
-
-input{
-    text-transform:uppercase;
-}
-
-button{
-    border:none;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.start{
-    background:#208684;
-}
-
-.stop{
-    background:#D20014;
-}
-
-.scan{
-    background:#1565C0;
-}
-
-.add{
-    background:#333;
-}
-
-.save{
-    background:#208684;
-}
-
-.pdf{
-    background:#6A1B9A;
-}
-
-.delete-list{
-    background:#D20014;
-}
-
-.back{
-    background:#777;
-}
-
-.status{
-    margin-top:10px;
-    padding:12px;
-    border-radius:8px;
-    background:#eee;
-    text-align:center;
-    font-weight:bold;
-}
-
-.item{
-    background:#f7f7f7;
-    padding:12px;
-    border-radius:8px;
-    margin-top:10px;
-}
-
-.item-actions{
-    margin-top:10px;
-    display:flex;
-    gap:10px;
-}
-
-.small-btn{
-    flex:1;
-    padding:10px;
-    border:none;
-    border-radius:6px;
-    color:white;
-    cursor:pointer;
-}
-
-.edit{
-    background:#208684;
-}
-
-.delete{
-    background:#D20014;
-}
-
-canvas{
-    display:none;
-}
-
-</style>
-
+  <meta charset="UTF-8">
+  <title>Rockwool Device Scan App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<div class="container">
-
-<h1>📱 Enhed Scanner</h1>
-
-<div id="listSelector" class="list-selector">
-
-    <button class="list-btn new-list-btn" onclick="createNewList()">
-        ➕ Ny Liste
-    </button>
-
-    <div id="listButtons"></div>
-
-</div>
-
-<div id="mainContent" style="display:none;">
-
-    <button class="back" onclick="goBack()">
-        ← Tilbage
-    </button>
-
-    <h2 id="listTitle" style="margin-top:15px;"></h2>
-
-    <div class="video-wrapper">
-
-        <video id="video" autoplay playsinline></video>
-
-        <div class="guide"></div>
-
+  <header>
+    <img src="rockwool-logo.svg" alt="Rockwool logo">
+    <h1>Device Scan App</h1>
+  </header>
+  <main>
+    <button id="newScanBtn">Scan QR/Stregkode</button>
+    <div id="manualInput">
+      <input type="text" id="manualCode" placeholder="Indtast kode">
+      <button id="addManualBtn">Tilføj</button>
     </div>
 
-    <canvas id="canvas"></canvas>
-
-    <button class="start" onclick="startCamera()">
-        📷 Start Kamera
-    </button>
-
-    <button class="stop" onclick="stopCamera()">
-        ⛔ Stop Kamera
-    </button>
-
-    <button class="scan" onclick="scanText()">
-        🔍 Scan Serienummer
-    </button>
-
-    <input
-        type="text"
-        id="codeInput"
-        placeholder="Serie nummer"
-        autocomplete="off"
-    >
-
-    <select id="deviceType">
-
-        <option value="">Vælg enhedstype</option>
-
-        <option value="Tablet">📱 Tablet</option>
-
-        <option value="Telefon">☎️ Telefon</option>
-
-        <option value="PC">💻 PC</option>
-
-    </select>
-
-    <button class="add" onclick="addItem()">
-        ✅ Tilføj
-    </button>
-
-    <button class="save" onclick="saveLists()">
-        💾 Gem Liste
-    </button>
-
-    <button class="pdf" onclick="generatePDF()">
-        📄 PDF
-    </button>
-
-    <button class="delete-list" onclick="deleteList()">
-        🗑️ Slet Liste
-    </button>
-
-    <div class="status" id="status">
-        Klar
+    <div id="deviceTypeDialog" class="modal" style="display:none;">
+      <div class="modal-content">
+        <h2>Vælg enhedstype</h2>
+        <select id="deviceTypeSelect">
+          <option value="mobil">Mobil</option>
+          <option value="tablet">Tablet</option>
+          <option value="pc">PC</option>
+        </select>
+        <div id="subtypeSelect"></div>
+        <button id="confirmTypeBtn">Bekræft</button>
+      </div>
     </div>
 
-    <div id="items"></div>
-
-</div>
-
-</div>
-
-<script>
-
-let stream = null;
-
-let lists = [];
-
-let currentListId = null;
-
-function init(){
-
-    loadLists();
-
-    renderListButtons();
-
-}
-
-function loadLists(){
-
-    const saved = localStorage.getItem('scanner_lists');
-
-    lists = saved ? JSON.parse(saved) : [];
-
-}
-
-function saveLists(){
-
-    localStorage.setItem(
-        'scanner_lists',
-        JSON.stringify(lists)
-    );
-
-    setStatus("💾 Liste gemt");
-
-}
-
-function createNewList(){
-
-    const title = prompt("Navn på liste:");
-
-    if(!title) return;
-
-    const list = {
-
-        id:Date.now(),
-
-        title:title,
-
-        items:[]
-
-    };
-
-    lists.unshift(list);
-
-    saveLists();
-
-    renderListButtons();
-
-    openList(list.id);
-
-}
-
-function renderListButtons(){
-
-    const div = document.getElementById('listButtons');
-
-    if(lists.length === 0){
-
-        div.innerHTML = `
-            <div class="status">
-                Ingen lister endnu
-            </div>
-        `;
-
-        return;
-
-    }
-
-    div.innerHTML = lists.map(list=>`
-
-        <button
-            class="list-btn"
-            onclick="openList(${list.id})"
-        >
-
-            ${list.title}
-            <br>
-            <small>${list.items.length} enheder</small>
-
-        </button>
-
-    `).join('');
-
-}
-
-function openList(id){
-
-    currentListId = id;
-
-    const list = getCurrentList();
-
-    document.getElementById('listSelector')
-        .style.display = 'none';
-
-    document.getElementById('mainContent')
-        .style.display = 'block';
-
-    document.getElementById('listTitle')
-        .innerText = list.title;
-
-    renderItems();
-
-}
-
-function goBack(){
-
-    stopCamera();
-
-    currentListId = null;
-
-    document.getElementById('listSelector')
-        .style.display = 'block';
-
-    document.getElementById('mainContent')
-        .style.display = 'none';
-
-    renderListButtons();
-
-}
-
-function getCurrentList(){
-
-    return lists.find(l => l.id === currentListId);
-
-}
-
-async function startCamera(){
-
-    try{
-
-        stream = await navigator.mediaDevices.getUserMedia({
-
-            video:{
-
-                facingMode:{
-                    ideal:"environment"
-                },
-
-                width:{
-                    ideal:1920
-                },
-
-                height:{
-                    ideal:1080
-                }
-
-            }
-
-        });
-
-        const video = document.getElementById('video');
-
-        video.srcObject = stream;
-
-        const track = stream.getVideoTracks()[0];
-
-        const capabilities = track.getCapabilities();
-
-        if(capabilities.focusMode){
-
-            await track.applyConstraints({
-
-                advanced:[
-                    {
-                        focusMode:"continuous"
-                    }
-                ]
-
-            });
-
-        }
-
-        if(capabilities.zoom){
-
-            await track.applyConstraints({
-
-                advanced:[
-                    {
-                        zoom:2
-                    }
-                ]
-
-            });
-
-        }
-
-        setStatus("✅ Kamera startet");
-
-    }catch(err){
-
-        console.log(err);
-
-        setStatus("❌ Kamera fejl");
-
-    }
-
-}
-
-function stopCamera(){
-
-    if(stream){
-
-        stream.getTracks().forEach(track=>track.stop());
-
-    }
-
-    setStatus("📷 Kamera stoppet");
-
-}
-
-async function scanText(){
-
-    setStatus("🔍 Scanner...");
-
-    const video = document.getElementById('video');
-
-    const canvas = document.getElementById('canvas');
-
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = video.videoWidth;
-
-    canvas.height = video.videoHeight;
-
-    ctx.drawImage(video,0,0);
-
-    const cropX = canvas.width * 0.18;
-
-    const cropY = canvas.height * 0.26;
-
-    const cropWidth = canvas.width * 0.64;
-
-    const cropHeight = canvas.height * 0.09;
-
-    const tempCanvas = document.createElement('canvas');
-
-    tempCanvas.width = cropWidth * 5;
-
-    tempCanvas.height = cropHeight * 5;
-
-    const tempCtx = tempCanvas.getContext('2d');
-
-    tempCtx.drawImage(
-
-        canvas,
-
-        cropX,
-        cropY,
-        cropWidth,
-        cropHeight,
-
-        0,
-        0,
-        tempCanvas.width,
-        tempCanvas.height
-
-    );
-
-    const img = tempCtx.getImageData(
-        0,
-        0,
-        tempCanvas.width,
-        tempCanvas.height
-    );
-
-    const data = img.data;
-
-    for(let i=0;i<data.length;i+=4){
-
-        let avg =
-            (data[i]+data[i+1]+data[i+2])/3;
-
-        avg = avg > 150 ? 255 : 0;
-
-        data[i] = avg;
-        data[i+1] = avg;
-        data[i+2] = avg;
-
-    }
-
-    tempCtx.putImageData(img,0,0);
-
-    const result = await Tesseract.recognize(
-
-        tempCanvas,
-
-        'eng',
-
-        {
-
-            tessedit_pageseg_mode:7,
-
-            tessedit_char_whitelist:
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
-        }
-
-    );
-
-    let found = result.data.text
-        .replace(/[^A-Z0-9]/g,' ')
-        .split(' ')
-        .filter(x => x.length >= 5)
-        .sort((a,b)=>b.length-a.length)[0];
-
-    if(found){
-
-        found = found.toUpperCase();
-
-        document.getElementById('codeInput').value = found;
-
-        setStatus("✅ Fundet: " + found);
-
-    }else{
-
-        setStatus("❌ Ingen kode fundet");
-
-    }
-
-}
-
-function addItem(){
-
-    const code =
-        document.getElementById('codeInput')
-        .value
-        .trim()
-        .toUpperCase();
-
-    const type =
-        document.getElementById('deviceType').value;
-
-    if(!code){
-
-        setStatus("❌ Mangler serienummer");
-
-        return;
-
-    }
-
-    if(!type){
-
-        setStatus("❌ Vælg type");
-
-        return;
-
-    }
-
-    const list = getCurrentList();
-
-    const exists = list.items.some(
-        item => item.code === code
-    );
-
-    if(exists){
-
-        setStatus("⚠️ Serienummer findes allerede");
-
-        return;
-
-    }
-
-    list.items.push({
-
-        code,
-        type
-
-    });
-
-    saveLists();
-
-    renderItems();
-
-    document.getElementById('codeInput').value = '';
-
-    document.getElementById('deviceType').value = '';
-
-    setStatus("✅ Tilføjet");
-
-}
-
-function renderItems(){
-
-    const list = getCurrentList();
-
-    const div = document.getElementById('items');
-
-    if(!list || list.items.length === 0){
-
-        div.innerHTML = `
-            <div class="status">
-                Ingen enheder endnu
-            </div>
-        `;
-
-        return;
-
-    }
-
-    div.innerHTML = list.items.map((item,index)=>`
-
-        <div class="item">
-
-            <b>${item.code}</b>
-            <br>
-            ${item.type}
-
-            <div class="item-actions">
-
-                <button
-                    class="small-btn edit"
-                    onclick="editItem(${index})"
-                >
-                    Rediger
-                </button>
-
-                <button
-                    class="small-btn delete"
-                    onclick="deleteItem(${index})"
-                >
-                    Slet
-                </button>
-
-            </div>
-
-        </div>
-
-    `).join('');
-
-}
-
-function editItem(index){
-
-    const list = getCurrentList();
-
-    const item = list.items[index];
-
-    const newCode = prompt(
-        "Rediger serienummer",
-        item.code
-    );
-
-    if(!newCode) return;
-
-    item.code = newCode.toUpperCase();
-
-    saveLists();
-
-    renderItems();
-
-}
-
-function deleteItem(index){
-
-    const list = getCurrentList();
-
-    if(confirm("Slet enhed?")){
-
-        list.items.splice(index,1);
-
-        saveLists();
-
-        renderItems();
-
-    }
-
-}
-
-function deleteList(){
-
-    const list = getCurrentList();
-
-    if(!list) return;
-
-    const confirmed = confirm(
-        `Slet listen "${list.title}"?`
-    );
-
-    if(!confirmed) return;
-
-    lists = lists.filter(
-        l => l.id !== currentListId
-    );
-
-    saveLists();
-
-    stopCamera();
-
-    currentListId = null;
-
-    document.getElementById('mainContent')
-        .style.display = 'none';
-
-    document.getElementById('listSelector')
-        .style.display = 'block';
-
-    renderListButtons();
-
-    setStatus("🗑️ Liste slettet");
-
-}
-
-function generatePDF(){
-
-    const list = getCurrentList();
-
-    if(!list || list.items.length === 0){
-
-        setStatus("❌ Ingen enheder");
-
-        return;
-
-    }
-
-    let html = `
-
-    <html>
-
-    <head>
-
-    <title>${list.title}</title>
-
-    <style>
-
-    body{
-        font-family:Arial;
-        padding:20px;
-    }
-
-    h1{
-        color:#D20014;
-    }
-
-    .item{
-        border:1px solid #ccc;
-        padding:12px;
-        margin-bottom:10px;
-        border-radius:8px;
-    }
-
-    </style>
-
-    </head>
-
-    <body>
-
-    <h1>${list.title}</h1>
-
-    `;
-
-    list.items.forEach(item=>{
-
-        html += `
-
-        <div class="item">
-
-            <b>${item.code}</b>
-            <br>
-            ${item.type}
-
-        </div>
-
-        `;
-
-    });
-
-    html += `</body></html>`;
-
-    const win = window.open('');
-
-    win.document.write(html);
-
-    win.document.close();
-
-    win.print();
-
-}
-
-function setStatus(text){
-
-    document.getElementById('status').innerText = text;
-
-}
-
-window.addEventListener('load',init);
-
-window.addEventListener('beforeunload',()=>{
-
-    stopCamera();
-
-});
-
-</script>
-
+    <section id="deviceListSection">
+      <h2>Enheder</h2>
+      <div id="deviceList"></div>
+    </section>
+
+    <div class="actions">
+      <button id="lockListBtn">Lås listen</button>
+      <button id="pdfBtn">Lav PDF</button>
+    </div>
+  </main>
+
+  <div id="confirmLockModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <p>Er du sikker på du vil slutte denne liste?</p>
+      <button id="confirmLockYes">Ja</button>
+      <button id="confirmLockNo">Nej</button>
+    </div>
+  </div>
+
+  <script src="libs/pdfmake.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+  color: #656565;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: #D20014;
+  padding: 20px 0;
+  text-align: center;
+}
+
+header img {
+  height: 32px;
+}
+
+header h1 {
+  color: #fff;
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 2px;
+}
+
+main {
+  max-width: 400px;
+  margin: 20px auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 2px 8px #20868408;
+}
+
+button {
+  background: #208684;
+  color: #fff;
+  border: none;
+  padding: 15px 24px;
+  margin: 8px 0;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #656565;
+}
+
+.actions button {
+  width: 45%;
+  display: inline-block;
+}
+
+#manualInput {
+  margin: 18px 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+#manualInput input {
+  flex: 1;
+  padding: 10px;
+  margin-right: 8px;
+  border-radius: 6px;
+  border: 1px solid #208684;
+}
+
+.modal {
+  position: fixed;
+  top:0; left:0; width:100%; height:100%; 
+  background: rgba(100,100,100,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px 18px;
+  min-width: 220px;
+}
+
+#deviceListSection h2 {
+  color: #D20014;
+}
+
+.device-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.device-type {
+  color: #208684;
+  font-weight: bold;
+}
+
+.device-subtype {
+  color: #656565;
+  font-size: 13px;
+  margin-left: 7px;
+}
+
+.delete-btn {
+  background: #D20014;
+  padding: 5px 8px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+.delete-btn:hover {
+  background: #9F000F;
+}
+// app.js - Rockwool Device Scan App
+// Kode dokumenteret til fremtidig vedligeholdelse/overdragelse
+
+// --- Data model ---
+let devices = []; // Array af { code, type, subtype }
+let listLocked = false;
+
+// --- HTML Elements ---
+const deviceList = document.getElementById('deviceList');
+const deviceTypeDialog = document.getElementById('deviceTypeDialog');
+const deviceTypeSelect = document.getElementById('deviceTypeSelect');
+const subtypeSelect = document.getElementById('subtypeSelect');
+const confirmTypeBtn = document.getElementById('confirmTypeBtn');
+const lockListBtn = document.getElementById('lockListBtn');
+const pdfBtn = document.getElementById('pdfBtn');
+const manualCode = document.getElementById('manualCode');
+const addManualBtn = document.getElementById('addManualBtn');
+const newScanBtn = document.getElementById('newScanBtn');
+const confirmLockModal = document.getElementById('confirmLockModal');
+const confirmLockYes = document.getElementById('confirmLockYes');
+const confirmLockNo = document.getElementById('confirmLockNo');
+
+// --- Device subtype valgmuligheder ---
+const subtypes = {
+  mobil: ["iPhone", "Android", "Andet"],
+  tablet: ["iPad", "Android Tablet", "Andet"],
+  pc: ["Laptop", "Desktop", "Andet"]
+};
+// --- Gem til localStorage ---
+function saveDevices() {
+  localStorage.setItem('rw_devices_list', JSON.stringify(devices));
+  localStorage.setItem('rw_devices_locked', listLocked ? "1" : "0");
+}
+
+// --- Load fra localStorage ---
+function loadDevices() {
+  try {
+    devices = JSON.parse(localStorage.getItem('rw_devices_list')) || [];
+    listLocked = localStorage.getItem('rw_devices_locked') == "1";
+  } catch(e) {
+    devices = [];
+    listLocked = false;
+  }
+}
+loadDevices();
+
+// --- UI: Vis listen ---
+function renderDeviceList() {
+  deviceList.innerHTML = '';
+  // Opdelt visning
+  ['mobil','tablet','pc'].forEach(type => {
+    const filtered = devices.filter(x=>x.type === type);
+    if(filtered.length) {
+      let typeName = type[0].toUpperCase() + type.slice(1);
+      deviceList.innerHTML += `<div><b>${typeName}</b></div>`;
+      filtered.forEach((dev,i) => {
+        deviceList.innerHTML += `
+          <div class="device-row">
+            <span>
+              <span class="device-type">${dev.code}</span>
+              <span class="device-subtype">${dev.subtype}</span>
+            </span>
+            ${!listLocked ? `<button class="delete-btn" data-i="${devices.indexOf(dev)}">Slet</button>` : ''}
+          </div>`;
+      });
+    }
+  });
+}
+// --- UI: Slet fra listen ---
+deviceList.onclick = function(e) {
+  if(e.target.classList.contains("delete-btn") && !listLocked) {
+    const idx = e.target.dataset.i;
+    devices.splice(idx,1);
+    saveDevices();
+    renderDeviceList();
+  }
+}
+
+// --- Scan QR/barcode (viser dialog og simulerer kode for demo) ---
+newScanBtn.onclick = async function() {
+  if(listLocked) return;
+  let scanCode = prompt("Scan eller indtast kode her (demo).");
+  // Her kan du integrere med fx html5-qrcode hvis du ønsker live scan
+  if (scanCode && scanCode.trim()) {
+    showDeviceTypeDialog(scanCode.trim());
+  }
+}
+
+// --- Manuel indtastning ---
+addManualBtn.onclick = function() {
+  if(listLocked) return;
+  let code = manualCode.value.trim();
+  if (code) {
+    manualCode.value='';
+    showDeviceTypeDialog(code);
+  }
+}
+
+// --- Vælg enhedstype + subtype ---
+function showDeviceTypeDialog(code) {
+  deviceTypeDialog.style.display = 'flex';
+  deviceTypeSelect.value = "mobil";
+  renderSubtypeSelect("mobil");
+  // Gem den scannede kode midlertidigt
+  deviceTypeDialog.dataset.code = code;
+}
+
+deviceTypeSelect.onchange = function() {
+  renderSubtypeSelect(deviceTypeSelect.value);
+}
+
+// --- Render subtype select ---
+function renderSubtypeSelect(type) {
+  let opts = subtypes[type] || ["Andet"];
+  subtypeSelect.innerHTML = `<select id="subtypeSelectDropdown">
+    ${opts.map(s=>`<option value="${s}">${s}</option>`).join('')}
+  </select>`;
+}
+
+confirmTypeBtn.onclick = function() {
+  let code = deviceTypeDialog.dataset.code;
+  let type = deviceTypeSelect.value;
+  let subtype = document.getElementById("subtypeSelectDropdown").value;
+  devices.push({code, type, subtype});
+  saveDevices();
+  renderDeviceList();
+  deviceTypeDialog.style.display = 'none';
+}
+
+// --- Lås listen ---
+lockListBtn.onclick = function() {
+  if(listLocked) return;
+  confirmLockModal.style.display = 'flex';
+}
+
+confirmLockYes.onclick = function() {
+  listLocked = true;
+  saveDevices();
+  renderDeviceList();
+  confirmLockModal.style.display = 'none';
+}
+
+confirmLockNo.onclick = function() {
+  confirmLockModal.style.display = 'none';
+}
+
+// --- Lav PDF med tjekbokse ---
+pdfBtn.onclick = function() {
+  // Bygg PDF-data med tjekbokse
+  let doc = {
+    content: [],
+    styles: {
+      header: {color:'#D20014',fontSize:18,bold:true}
+    }
+  }
+  doc.content.push({text:'Rockwool Device List', style:'header', margin:[0,0,0,12]});
+
+  ['mobil','tablet','pc'].forEach(type => {
+    const filtered = devices.filter(x=>x.type === type);
+    if(filtered.length) {
+      doc.content.push({text:type[0].toUpperCase()+type.slice(1), color:'#208684', fontSize:15, bold:true, margin:[0,12,0,4]});
+      filtered.forEach(dev => {
+        doc.content.push({
+          columns: [
+            {text:`${dev.code} (${dev.subtype})`,width:'*'},
+            {text:'[  ]',width:40}
+          ]
+        });
+      });
+    }
+  });
+  pdfMake.createPdf(doc).download("rockwool-device-list.pdf");
+}
+
+// --- Initialisering ---
+renderDeviceList();
+if(listLocked) lockListBtn.disabled = true;
+
+// --- PWA/manifest (valgfrit) ---
+// Tilføj manifest.json og service worker hvis appen skal installeres på mobilen
+
+// --- Overdragelse & videreudvikling ---
+// Alle centrale UI-funktioner er inddelt i separate funktioner
+// Data gemmes lokalt og kan nemt udvides til backend/server
+// Barcode scanner kan let implementeres med html5-qrcode eller ZXing-JS
