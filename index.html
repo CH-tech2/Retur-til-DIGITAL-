@@ -10,6 +10,8 @@
 <!-- jsPDF: til PDF-generering (samme som din fungerende kode) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<!-- JsBarcode: genererer scanbare Code128-stregkoder til PDF'en -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -258,7 +260,11 @@ async function startScanner(){
     }
     setStatus("🔍 Starter scanner...");
     try{
-        if(!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
+        // Ryd altid en evt. tidligere reader og opret en frisk.
+        // reset() river læseren ned, så genbrug af den gamle får scanneren
+        // til aldrig at starte igen efter første fund. En ny instans hver gang løser det.
+        if(codeReader){ try { codeReader.reset(); } catch(e){} }
+        codeReader = new ZXing.BrowserMultiFormatReader();
 
         document.getElementById('videoWrapper').style.display = 'block';
         document.getElementById('stopBtn').style.display = 'block';
@@ -452,29 +458,102 @@ function generateAndMail(id){
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        doc.setFontSize(16);
-        doc.text("ROCKWOOL – " + list.title, 14, 18);
-        doc.setFontSize(9);
-        doc.text("Oprettet: " + new Date(list.created).toLocaleString(), 14, 25);
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const marginX = 14;
+        const bottomLimit = pageH - 14;
 
-        // Tabel med tjekboks-kolonne (☐) + gruppering via type-kolonne
+        // Sidehoved (gentages på hver ny side)
+        function drawHeader(){
+            doc.setFontSize(16);
+            doc.setTextColor(210, 0, 20); // ROCKWOOL rød
+            doc.text("ROCKWOOL – " + list.title, marginX, 18);
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(9);
+            doc.text("Oprettet: " + new Date(list.created).toLocaleString(), marginX, 25);
+        }
+        drawHeader();
+
+        let y = 34; // aktuel lodret position
+
+        // Lav en scanbar Code128-stregkode som PNG (dataURL) via JsBarcode + skjult canvas
+        function makeBarcode(code){
+            try{
+                const canvas = document.createElement('canvas');
+                JsBarcode(canvas, code, {
+                    format: "CODE128",
+                    displayValue: false,   // teksten skriver vi selv i PDF'en
+                    height: 60,
+                    width: 2,
+                    margin: 0
+                });
+                return canvas.toDataURL('image/png');
+            }catch(e){
+                console.warn("Kunne ikke lave stregkode for", code, e);
+                return null;
+            }
+        }
+
         const sorted = getSortedItems(list);
-        const rows = sorted.map(({item}) => [
-            "☐",
-            item.code,
-            item.type,
-            item.subType || "",
-            item.model || ""
-        ]);
+        let currentGroup = null;
 
-        doc.autoTable({
-            head: [["✓", "Kode", "Type", "Undertype", "Model"]],
-            body: rows,
-            startY: 32,
-            theme: 'grid',
-            styles: { fontSize: 10, cellPadding: 3, valign: 'middle' },
-            headStyles: { fillColor: [32,134,132] },
-            columnStyles: { 0: { cellWidth: 10, halign: 'center', fontSize: 14 } }
+        const BLOCK_H = 34;   // højde pr. enhedsblok (info + stregkode)
+        const BARCODE_W = 90; // stregkode-bredde i mm
+        const BARCODE_H = 16; // stregkode-højde i mm
+
+        sorted.forEach(({item}) => {
+
+            // Gruppeoverskrift (Tablet / Telefon / PC)
+            if(item.type !== currentGroup){
+                currentGroup = item.type;
+                if(y + 12 > bottomLimit){ doc.addPage(); drawHeader(); y = 34; }
+                doc.setFillColor(32, 134, 132); // teal
+                doc.rect(marginX, y, pageW - marginX*2, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(11);
+                doc.text(currentGroup, marginX + 3, y + 5.6);
+                doc.setTextColor(0, 0, 0);
+                y += 12;
+            }
+
+            // Sideskift hvis blokken ikke kan være på siden
+            if(y + BLOCK_H > bottomLimit){ doc.addPage(); drawHeader(); y = 34; }
+
+            // Ramme om enheden
+            doc.setDrawColor(210);
+            doc.roundedRect(marginX, y, pageW - marginX*2, BLOCK_H, 2, 2);
+
+            // Tjekboks + info-linje øverst
+            const infoY = y + 6;
+            doc.setDrawColor(60);
+            doc.rect(marginX + 3, infoY - 3.5, 4.5, 4.5); // tjekboks
+
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(item.code, marginX + 11, infoY);
+            doc.setFont(undefined, 'normal');
+
+            doc.setFontSize(9);
+            doc.setTextColor(90);
+            doc.text(itemLabel(item), marginX + 11, infoY + 5);
+            doc.setTextColor(0);
+
+            // Stregkode nedenunder
+            const img = makeBarcode(item.code);
+            if(img){
+                doc.addImage(img, 'PNG', marginX + 11, infoY + 8, BARCODE_W, BARCODE_H);
+                // læsbar kode under stregkoden
+                doc.setFontSize(8);
+                doc.text(item.code, marginX + 11, infoY + 8 + BARCODE_H + 3.5);
+            }else{
+                doc.setFontSize ? null : null;
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text("(stregkode kunne ikke genereres)", marginX + 11, infoY + 14);
+                doc.setTextColor(0);
+            }
+
+            y += BLOCK_H + 4;
         });
 
         const blob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
