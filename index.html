@@ -284,12 +284,61 @@ async function startScanner(){
             }
         });
 
+        // Kamera-optimering (samme tricks som opfyldnings-app'en):
+        // ZXing styrer selv strømmen, så vi henter track'et bagefter og
+        // sætter høj opløsning, kontinuerlig autofokus og let zoom for
+        // at gøre QR/stregkoder skarpere og nemmere at afkode.
+        optimizeCameraTrack();
+
         setStatus("✅ Scanner kører – hold koden i rammen");
     }catch(e){
         console.log(e);
         scanning = false;
         setStatus("❌ Kamera fejl: " + e.message);
     }
+}
+
+async function optimizeCameraTrack(){
+    try{
+        const video = document.getElementById('video');
+        // Vent kort til ZXing har startet strømmen
+        let tries = 0;
+        while((!video.srcObject) && tries < 20){
+            await new Promise(r => setTimeout(r, 100));
+            tries++;
+        }
+        if(!video.srcObject) return;
+
+        const track = video.srcObject.getVideoTracks()[0];
+        if(!track) return;
+
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+
+        // Kontinuerlig autofokus – vigtigst for at få små stregkoder skarpe
+        if(caps.focusMode && caps.focusMode.includes('continuous')){
+            try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e){}
+        }
+
+        // Let zoom (~2x, men aldrig over kameraets max) så koden fylder mere
+        if(caps.zoom){
+            try {
+                const zoomLevel = Math.min(caps.zoom.max, 2.0);
+                if(zoomLevel > (caps.zoom.min || 1)){
+                    await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+                }
+            } catch(e){}
+        }
+
+        // Højere opløsning hvis kameraet understøtter det (skarpere afkodning)
+        if(caps.width && caps.height){
+            try {
+                await track.applyConstraints({
+                    width:  { ideal: 1920 },
+                    height: { ideal: 1080 }
+                });
+            } catch(e){}
+        }
+    }catch(e){ console.log('Kamera-optimering sprunget over:', e); }
 }
 
 function stopScanner(){
