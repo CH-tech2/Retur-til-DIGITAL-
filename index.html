@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {font-family: Arial, sans-serif; background: #f7f7f7; color: #656565; margin: 0;}
-    header {background: #D20014; padding: 20px 0 8px 0; text-align: center;}
-    header svg {margin-bottom: 4px;}
+    header {background: #D20014; padding: 20px 0 4px 0; text-align: center;}
+    .rw-logo {margin-bottom: -5px;}
     header h1 {color: #fff; margin: 0; font-size: 22px; letter-spacing: 2px;}
     main {max-width: 420px; margin: 20px auto; background: #fff; border-radius: 8px;
       padding: 18px; box-shadow: 0 2px 8px #20868413;}
@@ -39,11 +39,12 @@
 </head>
 <body>
   <header>
-    <svg width="140" height="32" viewBox="0 0 140 32" style="vertical-align: middle;">
+    <!-- Rockwool logo (korrekt bredde/placering) -->
+    <svg class="rw-logo" width="180" height="32" viewBox="0 0 180 32" style="vertical-align: middle;">
       <rect width="32" height="32" fill="#D20014"/>
       <rect x="6" y="6" width="20" height="20" fill="white"/>
       <rect x="11" y="11" width="10" height="10" fill="#D20014"/>
-      <text x="44" y="22.5" font-size="20" fill="white" font-family="Arial" font-weight="bold">ROCKWOOL</text>
+      <text x="44" y="23" font-size="20" fill="white" font-family="Arial" font-weight="bold">ROCKWOOL</text>
     </svg>
     <h1>Device Scan App</h1>
   </header>
@@ -132,9 +133,7 @@
       }
     }
     function startQRScanner(){
-      if(html5Qr) {
-        html5Qr.clear();
-      }
+      if(html5Qr) { html5Qr.clear(); }
       html5Qr = new Html5Qrcode("reader");
       html5Qr.start(
         { facingMode: "environment" },
@@ -147,12 +146,11 @@
         },
         err =>      ).catch(err => {
         html5Qr.clear();
-        alert("Kan ikke tilgå kamera – tjek tilladelser og HTTPS.");
+        alert("Kan ikke tilgå kamera – tjek tilladelser og HTTPS/GitHub Pages.");
         qrModal.style.display="none";
       });
     }
 
-    // Device subtype valgmuligheder
     const subtypes = {
       mobil: ["iPhone", "Android", "Andet"],
       tablet: ["iPad", "Android Tablet", "Andet"],
@@ -207,13 +205,11 @@
       }
     };
 
-    // --- Scan QR/barcode (nyt: åbner QR kamera) ---
     newScanBtn.onclick = function() {
       if(listLocked) return;
       openQRModal();
     };
 
-    // Manual indtastning
     addManualBtn.onclick = function() {
       if(listLocked) return;
       let code = manualCode.value.trim();
@@ -223,12 +219,10 @@
       }
     };
 
-    // Enter i inputfelt
     manualCode.addEventListener('keyup',function(e) {
       if(e.key==='Enter') addManualBtn.click();
     });
 
-    // Vælg enhedstype + subtype
     function showDeviceTypeDialog(code) {
       deviceTypeDialog.style.display = 'flex';
       deviceTypeSelect.value = "mobil";
@@ -255,14 +249,12 @@
       deviceTypeDialog.style.display = 'none';
     };
 
-    // Luk modal ved klik udenfor
     window.onclick = function(e){
       if(e.target === deviceTypeDialog) deviceTypeDialog.style.display = "none";
       if(e.target === confirmLockModal) confirmLockModal.style.display = "none";
       if(e.target === qrModal) closeQRModal();
     };
 
-    // Lås listen
     lockListBtn.onclick = function() {
       if(listLocked) return;
       confirmLockModal.style.display = 'flex';
@@ -278,7 +270,6 @@
       confirmLockModal.style.display = 'none';
     };
 
-    // Lav PDF med tjekbokse
     pdfBtn.onclick = function() {
       if(!devices.length) {
         alert("Ingen enheder på listen!");
