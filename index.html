@@ -276,19 +276,29 @@ async function startScanner(){
 
         scanning = true;
 
-        await codeReader.decodeFromVideoDevice(deviceId, 'video', (result) => {
-            if(result){
-                const now = Date.now();
-                if(now - lastScan < 1500) return;
-                lastScan = now;
-                const text = result.getText().toUpperCase();
-                document.getElementById('codeInput').value = text;
-                if(navigator.vibrate) navigator.vibrate(120);
-                // Luk kameramodulet efter fund (som ønsket)
-                stopScanner();
-                setStatus("✅ Fundet: " + text + " – vælg type og tryk Tilføj");
+        // Bed om bagkamera + høj opløsning VED start (ikke midt i scanningen).
+        // Det giver skarpere billede uden at afbryde afkodningen undervejs.
+        const videoConstraints = deviceId
+            ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+            : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } };
+
+        await codeReader.decodeFromConstraints(
+            { video: videoConstraints, audio: false },
+            'video',
+            (result) => {
+                if(result){
+                    const now = Date.now();
+                    if(now - lastScan < 1500) return;
+                    lastScan = now;
+                    const text = result.getText().toUpperCase();
+                    document.getElementById('codeInput').value = text;
+                    if(navigator.vibrate) navigator.vibrate(120);
+                    // Luk kameramodulet efter fund (som ønsket)
+                    stopScanner();
+                    setStatus("✅ Fundet: " + text + " – vælg type og tryk Tilføj");
+                }
             }
-        });
+        );
 
         // Kamera-optimering (samme tricks som opfyldnings-app'en):
         // ZXing styrer selv strømmen, så vi henter track'et bagefter og
@@ -320,29 +330,13 @@ async function optimizeCameraTrack(){
 
         const caps = track.getCapabilities ? track.getCapabilities() : {};
 
-        // Kontinuerlig autofokus – vigtigst for at få små stregkoder skarpe
+        // KUN kontinuerlig autofokus.
+        // VIGTIGT: Vi ændrer IKKE opløsning eller zoom via applyConstraints her,
+        // fordi det omkonfigurerer den kørende strøm og afbryder ZXing's afkodning
+        // (så scanneren holder op med at registrere koder). Fokus alene er sikkert
+        // og er også det der betyder mest for at få skarpe stregkoder.
         if(caps.focusMode && caps.focusMode.includes('continuous')){
             try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e){}
-        }
-
-        // Let zoom (~2x, men aldrig over kameraets max) så koden fylder mere
-        if(caps.zoom){
-            try {
-                const zoomLevel = Math.min(caps.zoom.max, 2.0);
-                if(zoomLevel > (caps.zoom.min || 1)){
-                    await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
-                }
-            } catch(e){}
-        }
-
-        // Højere opløsning hvis kameraet understøtter det (skarpere afkodning)
-        if(caps.width && caps.height){
-            try {
-                await track.applyConstraints({
-                    width:  { ideal: 1920 },
-                    height: { ideal: 1080 }
-                });
-            } catch(e){}
         }
     }catch(e){ console.log('Kamera-optimering sprunget over:', e); }
 }
