@@ -4,12 +4,16 @@
   <meta charset="UTF-8">
   <title>Rockwool Device Scan App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <img src="rockwool-logo.svg" alt="Rockwool logo">
+    <svg width="110" height="32" viewBox="0 0 110 32" style="vertical-align: middle;">
+      <rect width="32" height="32" fill="#D20014"/>
+      <rect x="5" y="5" width="22" height="22" fill="white"/>
+      <rect x="10" y="10" width="12" height="12" fill="#D20014"/>
+      <text x="50" y="20" font-size="20" fill="white" font-family="Arial" font-weight="bold">ROCKWOOL</text>
+    </svg>
     <h1>Device Scan App</h1>
   </header>
   <main>
@@ -51,7 +55,7 @@
     </div>
   </div>
 
-  <script src="libs/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/pdfmake.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
@@ -69,8 +73,8 @@ header {
   text-align: center;
 }
 
-header img {
-  height: 32px;
+header svg {
+  margin-bottom: 4px;
 }
 
 header h1 {
@@ -133,6 +137,7 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1000;
 }
 
 .modal-content {
@@ -140,6 +145,7 @@ button:hover {
   border-radius: 8px;
   padding: 24px 18px;
   min-width: 220px;
+  box-shadow: 0 2px 8px #20868422;
 }
 
 #deviceListSection h2 {
@@ -175,9 +181,7 @@ button:hover {
   background: #9F000F;
 }
 // app.js - Rockwool Device Scan App
-// Kode dokumenteret til fremtidig vedligeholdelse/overdragelse
 
-// --- Data model ---
 let devices = []; // Array af { code, type, subtype }
 let listLocked = false;
 
@@ -202,6 +206,7 @@ const subtypes = {
   tablet: ["iPad", "Android Tablet", "Andet"],
   pc: ["Laptop", "Desktop", "Andet"]
 };
+
 // --- Gem til localStorage ---
 function saveDevices() {
   localStorage.setItem('rw_devices_list', JSON.stringify(devices));
@@ -223,7 +228,6 @@ loadDevices();
 // --- UI: Vis listen ---
 function renderDeviceList() {
   deviceList.innerHTML = '';
-  // Opdelt visning
   ['mobil','tablet','pc'].forEach(type => {
     const filtered = devices.filter(x=>x.type === type);
     if(filtered.length) {
@@ -242,7 +246,6 @@ function renderDeviceList() {
     }
   });
 }
-// --- UI: Slet fra listen ---
 deviceList.onclick = function(e) {
   if(e.target.classList.contains("delete-btn") && !listLocked) {
     const idx = e.target.dataset.i;
@@ -250,17 +253,16 @@ deviceList.onclick = function(e) {
     saveDevices();
     renderDeviceList();
   }
-}
+};
 
-// --- Scan QR/barcode (viser dialog og simulerer kode for demo) ---
+// --- Scan QR/barcode (vis dialog/simuler kode for demo) ---
 newScanBtn.onclick = async function() {
   if(listLocked) return;
   let scanCode = prompt("Scan eller indtast kode her (demo).");
-  // Her kan du integrere med fx html5-qrcode hvis du ønsker live scan
   if (scanCode && scanCode.trim()) {
     showDeviceTypeDialog(scanCode.trim());
   }
-}
+};
 
 // --- Manuel indtastning ---
 addManualBtn.onclick = function() {
@@ -270,22 +272,20 @@ addManualBtn.onclick = function() {
     manualCode.value='';
     showDeviceTypeDialog(code);
   }
-}
+};
 
 // --- Vælg enhedstype + subtype ---
 function showDeviceTypeDialog(code) {
   deviceTypeDialog.style.display = 'flex';
   deviceTypeSelect.value = "mobil";
   renderSubtypeSelect("mobil");
-  // Gem den scannede kode midlertidigt
   deviceTypeDialog.dataset.code = code;
 }
 
 deviceTypeSelect.onchange = function() {
   renderSubtypeSelect(deviceTypeSelect.value);
-}
+};
 
-// --- Render subtype select ---
 function renderSubtypeSelect(type) {
   let opts = subtypes[type] || ["Andet"];
   subtypeSelect.innerHTML = `<select id="subtypeSelectDropdown">
@@ -301,34 +301,33 @@ confirmTypeBtn.onclick = function() {
   saveDevices();
   renderDeviceList();
   deviceTypeDialog.style.display = 'none';
-}
+};
 
 // --- Lås listen ---
 lockListBtn.onclick = function() {
   if(listLocked) return;
   confirmLockModal.style.display = 'flex';
-}
+};
 
 confirmLockYes.onclick = function() {
   listLocked = true;
   saveDevices();
   renderDeviceList();
   confirmLockModal.style.display = 'none';
-}
+};
 
 confirmLockNo.onclick = function() {
   confirmLockModal.style.display = 'none';
-}
+};
 
 // --- Lav PDF med tjekbokse ---
 pdfBtn.onclick = function() {
-  // Bygg PDF-data med tjekbokse
   let doc = {
     content: [],
     styles: {
       header: {color:'#D20014',fontSize:18,bold:true}
     }
-  }
+  };
   doc.content.push({text:'Rockwool Device List', style:'header', margin:[0,0,0,12]});
 
   ['mobil','tablet','pc'].forEach(type => {
@@ -339,23 +338,15 @@ pdfBtn.onclick = function() {
         doc.content.push({
           columns: [
             {text:`${dev.code} (${dev.subtype})`,width:'*'},
-            {text:'[  ]',width:40}
+            {text:'[   ]',width:40}
           ]
         });
       });
     }
   });
   pdfMake.createPdf(doc).download("rockwool-device-list.pdf");
-}
+};
 
 // --- Initialisering ---
 renderDeviceList();
 if(listLocked) lockListBtn.disabled = true;
-
-// --- PWA/manifest (valgfrit) ---
-// Tilføj manifest.json og service worker hvis appen skal installeres på mobilen
-
-// --- Overdragelse & videreudvikling ---
-// Alle centrale UI-funktioner er inddelt i separate funktioner
-// Data gemmes lokalt og kan nemt udvides til backend/server
-// Barcode scanner kan let implementeres med html5-qrcode eller ZXing-JS
