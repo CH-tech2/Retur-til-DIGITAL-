@@ -39,7 +39,7 @@
 </head>
 <body>
   <header>
-    <!-- Rockwool logo (korrekt bredde/placering) -->
+    <!-- Korrekt Rockwool logo -->
     <svg class="rw-logo" width="180" height="32" viewBox="0 0 180 32" style="vertical-align: middle;">
       <rect width="32" height="32" fill="#D20014"/>
       <rect x="6" y="6" width="20" height="20" fill="white"/>
@@ -127,24 +127,32 @@
     }
     function closeQRModal() {
       if(html5Qr){
-        html5Qr.stop().then(()=>{qrModal.style.display="none";}).catch(()=>{qrModal.style.display="none";});
+        html5Qr.stop().then(function(){
+          qrModal.style.display="none";
+        }).catch(function(){
+          qrModal.style.display="none";
+        });
       } else {
         qrModal.style.display="none";
       }
     }
     function startQRScanner(){
-      if(html5Qr) { html5Qr.clear(); }
+      if(html5Qr) {
+        html5Qr.clear();
+      }
       html5Qr = new Html5Qrcode("reader");
       html5Qr.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 220, formatsToSupport: [ "QR_CODE", "CODE_128", "EAN_13", "EAN_8", "CODE_39", "UPC_A", "UPC_E" ] },
-        (decodedText, decodedResult) => {
-          html5Qr.stop().then(()=>{qrModal.style.display="none";});
-          setTimeout(()=>{
+        function(decodedText, decodedResult) {
+          html5Qr.stop().then(function(){
+            qrModal.style.display="none";
+          });
+          setTimeout(function(){
             showDeviceTypeDialog(decodedText);
           }, 100);
         },
-        err =>      ).catch(err => {
+        function(err)      ).catch(function(err) {
         html5Qr.clear();
         alert("Kan ikke tilgå kamera – tjek tilladelser og HTTPS/GitHub Pages.");
         qrModal.style.display="none";
@@ -178,12 +186,12 @@
         deviceList.innerHTML = "<div class=\"emptylist\">(Ingen enheder endnu)</div>";
         return;
       }
-      ['mobil','tablet','pc'].forEach(type => {
-        const filtered = devices.filter(x=>x.type === type);
+      ['mobil','tablet','pc'].forEach(function(type){
+        const filtered = devices.filter(function(x){return x.type === type;});
         if(filtered.length) {
           let typeName = type[0].toUpperCase() + type.slice(1);
           deviceList.innerHTML += `<div><b>${typeName}</b></div>`;
-          filtered.forEach((dev,i) => {
+          filtered.forEach(function(dev,i){
             deviceList.innerHTML += `
               <div class="device-row">
                 <span>
@@ -235,7 +243,7 @@
     function renderSubtypeSelect(type) {
       let opts = subtypes[type] || ["Andet"];
       subtypeSelect.innerHTML = `<select id="subtypeSelectDropdown" style="font-size:15px;width:90%;padding:8px;margin-top:5px;">${
-        opts.map(s=>`<option value="${s}">${s}</option>`).join('')
+        opts.map(function(s){return `<option value="${s}">${s}</option>`;}).join('')
       }</select>`;
     }
 
@@ -243,7 +251,7 @@
       let code = deviceTypeDialog.dataset.code;
       let type = deviceTypeSelect.value;
       let subtype = document.getElementById("subtypeSelectDropdown").value;
-      devices.push({code, type, subtype});
+      devices.push({code: code, type: type, subtype: subtype});
       saveDevices();
       renderDeviceList();
       deviceTypeDialog.style.display = 'none';
@@ -282,11 +290,11 @@
         }
       };
       doc.content.push({text:'Rockwool Device List', style:'header', margin:[0,0,0,12]});
-      ['mobil','tablet','pc'].forEach(type => {
-        const filtered = devices.filter(x=>x.type === type);
+      ['mobil','tablet','pc'].forEach(function(type){
+        const filtered = devices.filter(function(x){return x.type === type;});
         if(filtered.length) {
           doc.content.push({text:type[0].toUpperCase()+type.slice(1), color:'#208684', fontSize:15, bold:true, margin:[0,12,0,4]});
-          filtered.forEach(dev => {
+          filtered.forEach(function(dev){
             doc.content.push({
               columns: [
                 {text:`${dev.code} (${dev.subtype})`,width:'*'},
@@ -301,6 +309,7 @@
 
     renderDeviceList();
     if(listLocked) lockListBtn.disabled = true;
+
   </script>
 </body>
 </html>
