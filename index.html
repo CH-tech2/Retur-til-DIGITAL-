@@ -562,36 +562,61 @@ function generateAndMail(id){
         const sorted = getSortedItems(list);
         let currentGroup = null;
 
-        const BLOCK_H = 34;   // højde pr. enhedsblok (info + stregkode)
-        const BARCODE_W = 90; // stregkode-bredde i mm
-        const BARCODE_H = 16; // stregkode-højde i mm
+        // --- Faste mål (mm) for én enhedsblok ---
+        const PAD_TOP     = 6;    // luft fra rammens top til info-linjen (baseline)
+        const LABEL_GAP   = 5;    // fra kode-linje til type/model-linje
+        const BARCODE_GAP = 3;    // fra label ned til stregkodens top
+        const BARCODE_W   = 90;   // stregkode-bredde
+        const BARCODE_H   = 16;   // stregkode-højde
+        const CODE_GAP    = 4;    // fra stregkode ned til den læsbare kode (baseline)
+        const PAD_BOTTOM  = 3;    // luft fra sidste tekst til rammens bund
+        const BLOCK_GAP   = 4;    // mellemrum mellem to blokke
+
+        // Faktisk blokhøjde = alt indholdet lagt sammen. Bruges BÅDE til rammen
+        // og til sideskift-tjekket, så intet stikker ud over sidekanten.
+        const BLOCK_H = PAD_TOP + LABEL_GAP + BARCODE_GAP + BARCODE_H + CODE_GAP + PAD_BOTTOM;
+        const GROUP_H = 12;       // højde inkl. luft for en gruppeoverskrift
+
+        // Tegn en gruppeoverskrift på nuværende y
+        function drawGroupTitle(txt){
+            doc.setFillColor(32, 134, 132);
+            doc.rect(marginX, y, pageW - marginX*2, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(11);
+            doc.text(txt, marginX + 3, y + 5.6);
+            doc.setTextColor(0, 0, 0);
+            y += GROUP_H;
+        }
 
         sorted.forEach(({item}) => {
 
-            // Gruppeoverskrift (Tablet / Telefon / PC)
-            if(item.type !== currentGroup){
-                currentGroup = item.type;
-                if(y + 12 > bottomLimit){ doc.addPage(); drawHeader(); y = 34; }
-                doc.setFillColor(32, 134, 132); // teal
-                doc.rect(marginX, y, pageW - marginX*2, 8, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(11);
-                doc.text(currentGroup, marginX + 3, y + 5.6);
-                doc.setTextColor(0, 0, 0);
-                y += 12;
+            const isNewGroup = (item.type !== currentGroup);
+
+            // Beregn hvor meget plads der SKAL bruges lige nu:
+            // en evt. gruppeoverskrift PLUS selve blokken. Vi tjekker dem samlet,
+            // så en overskrift aldrig ender alene nederst på en side (uden sin første enhed).
+            const neededHeight = (isNewGroup ? GROUP_H : 0) + BLOCK_H;
+
+            if(y + neededHeight > bottomLimit){
+                doc.addPage();
+                drawHeader();
+                y = 34;
             }
 
-            // Sideskift hvis blokken ikke kan være på siden
-            if(y + BLOCK_H > bottomLimit){ doc.addPage(); drawHeader(); y = 34; }
+            // Gruppeoverskrift (nu garanteret plads til overskrift + første blok)
+            if(isNewGroup){
+                currentGroup = item.type;
+                drawGroupTitle(currentGroup);
+            }
 
-            // Ramme om enheden
+            // Ramme om enheden – bruger den beregnede BLOCK_H, så indholdet altid er indenfor
             doc.setDrawColor(210);
             doc.roundedRect(marginX, y, pageW - marginX*2, BLOCK_H, 2, 2);
 
-            // Tjekboks + info-linje øverst
-            const infoY = y + 6;
+            // Tjekboks + kode-linje øverst
+            const infoY = y + PAD_TOP;
             doc.setDrawColor(60);
-            doc.rect(marginX + 3, infoY - 3.5, 4.5, 4.5); // tjekboks
+            doc.rect(marginX + 3, infoY - 3.5, 4.5, 4.5);
 
             doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
@@ -600,25 +625,24 @@ function generateAndMail(id){
 
             doc.setFontSize(9);
             doc.setTextColor(90);
-            doc.text(itemLabel(item), marginX + 11, infoY + 5);
+            doc.text(itemLabel(item), marginX + 11, infoY + LABEL_GAP);
             doc.setTextColor(0);
 
-            // Stregkode nedenunder
+            // Stregkode + læsbar kode
+            const barcodeY = infoY + LABEL_GAP + BARCODE_GAP;
             const img = makeBarcode(item.code);
             if(img){
-                doc.addImage(img, 'PNG', marginX + 11, infoY + 8, BARCODE_W, BARCODE_H);
-                // læsbar kode under stregkoden
+                doc.addImage(img, 'PNG', marginX + 11, barcodeY, BARCODE_W, BARCODE_H);
                 doc.setFontSize(8);
-                doc.text(item.code, marginX + 11, infoY + 8 + BARCODE_H + 3.5);
+                doc.text(item.code, marginX + 11, barcodeY + BARCODE_H + CODE_GAP);
             }else{
-                doc.setFontSize ? null : null;
                 doc.setFontSize(8);
                 doc.setTextColor(150);
-                doc.text("(stregkode kunne ikke genereres)", marginX + 11, infoY + 14);
+                doc.text("(stregkode kunne ikke genereres)", marginX + 11, barcodeY + 6);
                 doc.setTextColor(0);
             }
 
-            y += BLOCK_H + 4;
+            y += BLOCK_H + BLOCK_GAP;
         });
 
         const blob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
