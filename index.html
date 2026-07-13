@@ -44,7 +44,8 @@ button{border:none;color:white;font-weight:bold;cursor:pointer;}
 .stop{background:#D20014;width:100%;padding:14px;margin-top:10px;display:none;}
 .add{background:#208684;}
 .newlist{background:#208684;width:100%;padding:16px;margin-top:4px;font-size:17px;}
-.lock{background:#208684;width:100%;padding:16px;margin-top:12px;font-size:17px;}
+.savedraft{background:#555;width:100%;padding:16px;margin-top:12px;font-size:17px;}
+.lock{background:#208684;width:100%;padding:16px;margin-top:10px;font-size:17px;}
 .back{background:#777;width:auto;padding:10px 16px;font-size:14px;}
 
 .status{margin-top:12px;padding:12px;border-radius:8px;background:#eee;text-align:center;font-weight:bold;}
@@ -117,11 +118,18 @@ button{border:none;color:white;font-weight:bold;cursor:pointer;}
         <option value="Desktop">🖥️ Desktop</option>
     </select>
 
+    <select id="platformSubType" style="display:none;">
+        <option value="">Vælg platform</option>
+        <option value="Apple">🍎 Apple</option>
+        <option value="Android">🤖 Android</option>
+    </select>
+
     <input class="full" type="text" id="modelInput" placeholder="Model (fx iPad Air, Galaxy S23, Dell XPS)" autocomplete="off">
 
     <h2 class="section">Enheder</h2>
 
-    <button class="lock" id="lockBtn" onclick="lockList()">Lås listen</button>
+    <button class="savedraft" id="saveDraftBtn" onclick="saveDraft()">💾 Gem kladde (fortsæt senere)</button>
+    <button class="lock" id="lockBtn" onclick="lockList()">🔒 Lås listen (færdig)</button>
 
     <div class="status" id="status">Klar</div>
     <div id="items"></div>
@@ -164,18 +172,33 @@ function renderSavedLists(){
         div.innerHTML = `<div class="status">Ingen gemte lister endnu</div>`;
         return;
     }
-    div.innerHTML = savedLists.slice().reverse().map(list=>`
-        <div class="saved-list-item">
-            <div class="saved-list-title" onclick="openSavedList('${list.id}')">
-                ${escapeHtml(list.title)} 🔒
+    div.innerHTML = savedLists.slice().reverse().map(list=>{
+        const locked = !!list.locked;
+        // Låst = tydelig markering (rød venstrekant + hængelås). Kladde = grøn "fortsæt".
+        const badge = locked
+            ? `<span style="color:#D20014;font-weight:bold;">🔒 LÅST</span>`
+            : `<span style="color:#208684;font-weight:bold;">✏️ KLADDE</span>`;
+        const borderStyle = locked
+            ? 'border-left:6px solid #D20014;'
+            : 'border-left:6px solid #208684;';
+
+        // Kladder kan åbnes/redigeres. Låste kan kun ses (PDF) + slettes med dobbeltbekræftelse.
+        const titleClick = locked ? '' : `onclick="openDraft('${list.id}')"`;
+        const cursor = locked ? 'cursor:default;' : 'cursor:pointer;';
+
+        return `
+        <div class="saved-list-item" style="${borderStyle}">
+            <div class="saved-list-title" style="${cursor}" ${titleClick}>
+                ${escapeHtml(list.title)} ${badge}
                 <small>${list.items.length} enheder · ${new Date(list.created).toLocaleDateString()}</small>
             </div>
             <div class="saved-actions">
+                ${!locked ? `<button class="icon-btn open-btn" onclick="openDraft('${list.id}')">✏️ Fortsæt</button>` : ''}
                 <button class="icon-btn pdf-btn" onclick="generateAndMail('${list.id}')">📄 PDF</button>
                 <button class="icon-btn del-btn" onclick="deleteSavedList('${list.id}')">🗑️</button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function startNewList(){
@@ -187,25 +210,36 @@ function startNewList(){
     renderItems();
 }
 
-/* Åbn en gemt (låst) liste i skrivebeskyttet visning med mulighed for at låse op */
-function openSavedList(id){
+/* Åbn en KLADDE (ikke-låst liste) for at fortsætte redigering.
+   Låste lister kan IKKE åbnes for redigering. */
+function openDraft(id){
     const list = savedLists.find(l => l.id === id);
     if(!list) return;
-    // Lås op = flyt tilbage til draft til redigering
-    if(confirm(`Lås listen "${list.title}" op for redigering?`)){
-        draft = JSON.parse(JSON.stringify(list));
-        savedLists = savedLists.filter(l => l.id !== id);
-        persist();
-        showEditScreen();
-        renderItems();
-        setStatus("🔓 Liste låst op – husk at låse igen");
+    if(list.locked){
+        alert("Denne liste er låst og kan ikke redigeres.");
+        return;
     }
+    // Flyt kladden ud i arbejdslisten og fjern fra gemte (gemmes igen ved 'Gem kladde'/'Lås')
+    draft = JSON.parse(JSON.stringify(list));
+    savedLists = savedLists.filter(l => l.id !== id);
+    persist();
+    showEditScreen();
+    renderItems();
+    setStatus("✏️ Fortsætter kladde – husk at gemme eller låse");
 }
 
 function deleteSavedList(id){
     const list = savedLists.find(l => l.id === id);
     if(!list) return;
-    if(!confirm(`Slet listen "${list.title}"?`)) return;
+
+    // Låste lister kræver DOBBELT bekræftelse (de er færdige og kan ikke gendannes).
+    if(list.locked){
+        if(!confirm(`⚠️ Slet den LÅSTE liste "${list.title}"?\n\nDette kan ikke fortrydes.`)) return;
+        if(!confirm(`Er du HELT sikker?\n\nDen låste liste "${list.title}" slettes permanent.`)) return;
+    }else{
+        if(!confirm(`Slet kladden "${list.title}"?`)) return;
+    }
+
     savedLists = savedLists.filter(l => l.id !== id);
     persist();
     renderSavedLists();
@@ -218,10 +252,17 @@ function showEditScreen(){
 }
 
 function backToOverview(){
-    if(draft && draft.items.length > 0){
-        if(!confirm("Gå tilbage uden at låse? Listen gemmes ikke som færdig.")) return;
-    }
     stopScanner();
+    // Har kladden indhold, så tilbyd at gemme den så man kan fortsætte senere.
+    if(draft && draft.items.length > 0){
+        const gem = confirm("Gem som kladde, så du kan fortsætte senere?\n\nOK = gem kladde · Annuller = kassér ændringer");
+        if(gem){
+            draft.locked = false;
+            savedLists.push(draft);
+            persist();
+            document.getElementById('overviewStatus').innerText = "💾 Kladde gemt – kan fortsættes";
+        }
+    }
     draft = null;
     document.getElementById('editScreen').style.display = 'none';
     document.getElementById('overviewScreen').style.display = 'block';
@@ -230,24 +271,42 @@ function backToOverview(){
 
 /* ---------- LÅSNING (= gem som færdig liste) ---------- */
 
-function lockList(){
+/* Gem som kladde: liste bevares redigerbar, bruger kan fortsætte senere. */
+function saveDraft(){
     if(!draft) return;
-    if(!confirm("Er du sikker på du vil slutte denne liste?")) return;
     stopScanner();
+    draft.locked = false;
     savedLists.push(draft);
     persist();
     draft = null;
     document.getElementById('editScreen').style.display = 'none';
     document.getElementById('overviewScreen').style.display = 'block';
     renderSavedLists();
-    document.getElementById('overviewStatus').innerText = "🔒 Liste gemt og låst";
+    document.getElementById('overviewStatus').innerText = "💾 Kladde gemt – kan fortsættes";
+}
+
+/* Lås: listen bliver færdig og kan IKKE låses op igen. */
+function lockList(){
+    if(!draft) return;
+    if(!confirm("Er du sikker på du vil slutte denne liste?\n\nEn låst liste kan IKKE redigeres eller låses op igen.")) return;
+    stopScanner();
+    draft.locked = true;
+    savedLists.push(draft);
+    persist();
+    draft = null;
+    document.getElementById('editScreen').style.display = 'none';
+    document.getElementById('overviewScreen').style.display = 'block';
+    renderSavedLists();
+    document.getElementById('overviewStatus').innerText = "🔒 Liste låst (færdig)";
 }
 
 /* ---------- TYPE / UNDERTYPE ---------- */
 
 function onTypeChange(){
     const type = document.getElementById('deviceType').value;
+    // PC → Laptop/Desktop. Tablet/Telefon → Apple/Android.
     document.getElementById('pcSubType').style.display = (type === 'PC') ? 'block' : 'none';
+    document.getElementById('platformSubType').style.display = (type === 'Tablet' || type === 'Telefon') ? 'block' : 'none';
 }
 
 /* ---------- SCANNER (ZXing) – lukker efter fund ---------- */
@@ -354,22 +413,31 @@ function addItem(){
     if(!draft) return;
     const code = document.getElementById('codeInput').value.trim().toUpperCase();
     const type = document.getElementById('deviceType').value;
-    const subType = document.getElementById('pcSubType').value;
+    const pcSub = document.getElementById('pcSubType').value;
+    const platformSub = document.getElementById('platformSubType').value;
     const model = document.getElementById('modelInput').value.trim();
 
     if(!code){ setStatus("❌ Mangler kode"); return; }
     if(!type){ setStatus("❌ Vælg type"); return; }
-    if(type === 'PC' && !subType){ setStatus("❌ Vælg Laptop eller Desktop"); return; }
+    if(type === 'PC' && !pcSub){ setStatus("❌ Vælg Laptop eller Desktop"); return; }
+    if((type === 'Tablet' || type === 'Telefon') && !platformSub){ setStatus("❌ Vælg Apple eller Android"); return; }
 
     const exists = draft.items.some(item => item.code === code);
     if(exists){ setStatus("⚠️ Kode findes allerede"); return; }
 
-    draft.items.push({code, type, subType: (type === 'PC' ? subType : ''), model});
+    // subType rummer den relevante undertype: PC → Laptop/Desktop, Tablet/Telefon → Apple/Android
+    let subType = '';
+    if(type === 'PC') subType = pcSub;
+    else if(type === 'Tablet' || type === 'Telefon') subType = platformSub;
+
+    draft.items.push({code, type, subType, model});
     renderItems();
     document.getElementById('codeInput').value = '';
     document.getElementById('deviceType').value = '';
     document.getElementById('pcSubType').value = '';
     document.getElementById('pcSubType').style.display = 'none';
+    document.getElementById('platformSubType').value = '';
+    document.getElementById('platformSubType').style.display = 'none';
     document.getElementById('modelInput').value = '';
     setStatus("✅ Tilføjet");
 }
@@ -429,6 +497,9 @@ function editItem(index){
 
     if(item.type === 'PC'){
         const newSub = prompt("PC-type (Laptop / Desktop)", item.subType || "");
+        if(newSub !== null) item.subType = newSub.trim();
+    } else if(item.type === 'Tablet' || item.type === 'Telefon'){
+        const newSub = prompt("Platform (Apple / Android)", item.subType || "");
         if(newSub !== null) item.subType = newSub.trim();
     }
     renderItems();
